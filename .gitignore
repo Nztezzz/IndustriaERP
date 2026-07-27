@@ -1,0 +1,43 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Rust workspace build output (shared by src-tauri + all crates/*, can
+# easily reach multiple GB -- never commit)
+/target
+
+# TanStack Router dev cache
+/.tanstack
+
+# TanStack Router (auto-generated on dev/build, do not edit or commit)
+src/routeTree.gen.ts
+
+# Ad-hoc PowerShell scripts used for one-off live API verification during
+# development (see task 24 notes) -- always deleted after use, but ignore
+# the pattern in case one is ever left behind.
+.tmp-*.ps1
+
+# Local desktop-launch shortcut for the built app (points at an absolute
+# path on this machine, not portable -- never commit).
+*.lnk
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

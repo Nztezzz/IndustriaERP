@@ -1,0 +1,18 @@
+[package]
+name = "erp-migration"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+publish.workspace = true
+
+[lib]
+name = "erp_migration"
+path = "src/lib.rs"
+
+[[bin]]
+name = "erp-migrate"
+path = "src/main.rs"
+
+[dependencies]
+sea-orm-migration = { workspace = true, features = ["cli"] }
+tokio = { workspace = true, features = ["full"] }

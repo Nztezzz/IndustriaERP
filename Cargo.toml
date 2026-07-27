@@ -1,0 +1,67 @@
+[workspace]
+resolver = "2"
+members = [
+    "src-tauri",
+    "crates/erp-core",
+    "crates/erp-migration",
+    "crates/erp-server",
+]
+
+# Shared metadata inherited by member crates via `version.workspace = true` etc.
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+authors = ["Preyansh Industries"]
+license = "UNLICENSED"
+publish = false
+
+# Pinned once here so every crate in the workspace stays in lockstep --
+# avoids the classic "works in erp-core, breaks in erp-server" version skew.
+[workspace.dependencies]
+# --- async runtime ---
+tokio = { version = "1.53", features = ["rt-multi-thread", "macros", "signal", "sync", "time"] }
+
+# --- web framework ---
+axum = { version = "0.8", features = ["json", "macros"] }
+tower = { version = "0.5", features = ["util"] }
+tower-http = { version = "0.7", features = ["cors", "trace", "fs"] }
+
+# --- database ---
+sea-orm = { version = "2.0", features = [
+    "sqlx-sqlite",
+    "runtime-tokio-rustls",
+    "macros",
+    "with-chrono",
+    "with-uuid",
+    "with-json",
+] }
+sea-orm-migration = { version = "2.0", features = [
+    "sqlx-sqlite",
+    "runtime-tokio-rustls",
+] }
+
+# --- serde / validation ---
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+validator = { version = "0.20", features = ["derive"] }
+
+# --- auth / crypto ---
+# rust_crypto backend: pure-Rust, no C toolchain/vendored crypto lib needed
+# to build -- keeps the Windows dev/build story simple for this crate.
+jsonwebtoken = { version = "11.0", default-features = false, features = ["rust_crypto"] }
+argon2 = "0.5"
+rand_core = { version = "0.6", features = ["getrandom"] }
+
+# --- ids / time ---
+uuid = { version = "1", features = ["v4", "serde"] }
+chrono = { version = "0.4", features = ["serde"] }
+
+# --- error handling / logging ---
+thiserror = "2"
+anyhow = "1"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+
+# --- misc ---
+dotenvy = "0.15"
+once_cell = "1"

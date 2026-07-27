@@ -1,0 +1,27 @@
+[package]
+name = "erp-core"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+publish.workspace = true
+
+[lib]
+name = "erp_core"
+path = "src/lib.rs"
+
+[dependencies]
+erp-migration = { path = "../erp-migration" }
+
+sea-orm.workspace = true
+tokio.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+validator.workspace = true
+jsonwebtoken.workspace = true
+argon2.workspace = true
+rand_core.workspace = true
+uuid.workspace = true
+chrono.workspace = true
+thiserror.workspace = true
+anyhow.workspace = true
+tracing.workspace = true
