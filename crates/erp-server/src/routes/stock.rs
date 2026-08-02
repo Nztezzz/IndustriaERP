@@ -2,12 +2,13 @@ use crate::error::{ApiError, ApiResult};
 use crate::extractors::{CurrentUser, OperatorUser};
 use crate::state::AppState;
 use axum::{
-    extract::{Query, State},
+    extract::{Path, Query, State},
     routing::{get, post},
     Json, Router,
 };
 use chrono::NaiveDateTime;
 use erp_core::services::stock_service;
+use sea_orm::{ColumnTrait, EntityTrait, QueryFilter};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -15,6 +16,8 @@ pub fn router() -> Router<AppState> {
     Router::new()
         .route("/stock/balances", get(balances))
         .route("/stock/movements", get(movements))
+        .route("/stock/movements/{id}", get(get_movement))
+        .route("/stock/movements/delete", post(delete_movements))
         .route("/stock/inward", post(inward))
         .route("/stock/outward", post(outward))
         .route("/stock/adjustment", post(adjustment))
@@ -188,6 +191,51 @@ async fn movements(
         page: query.page,
         page_size: query.page_size,
     }))
+}
+
+async fn get_movement(
+    State(state): State<AppState>,
+    CurrentUser(_): CurrentUser,
+    Path(id): Path<Uuid>,
+) -> ApiResult<Json<StockMovementDto>> {
+    use erp_core::entities::stock_movement;
+
+    let movement = stock_movement::Entity::find_by_id(id)
+        .one(&*state.db)
+        .await
+        .map_err(erp_core::AppError::from)
+        .map_err(ApiError)?
+        .ok_or(erp_core::AppError::NotFound(format!("stock movement {id} not found")))
+        .map_err(ApiError)?;
+
+    Ok(Json(movement.into()))
+}
+
+#[derive(Deserialize)]
+struct DeleteMovementsRequest {
+    ids: Vec<Uuid>,
+}
+
+async fn delete_movements(
+    State(state): State<AppState>,
+    OperatorUser(_): OperatorUser,
+    Json(body): Json<DeleteMovementsRequest>,
+) -> ApiResult<Json<serde_json::Value>> {
+    use erp_core::entities::stock_movement;
+    use sea_orm::DeleteMany;
+
+    if body.ids.is_empty() {
+        return Ok(Json(serde_json::json!({ "deleted": 0 })));
+    }
+
+    let result = stock_movement::Entity::delete_many()
+        .filter(stock_movement::Column::Id.is_in(body.ids.clone()))
+        .exec(&*state.db)
+        .await
+        .map_err(erp_core::AppError::from)
+        .map_err(ApiError)?;
+
+    Ok(Json(serde_json::json!({ "deleted": result.rows_affected })))
 }
 
 async fn inward(

@@ -24,12 +24,15 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { useProducts } from "@/lib/api/hooks/use-products"
+import { useCustomers } from "@/lib/api/hooks/use-customers"
 import { useStockBalances, useRecordOutward } from "@/lib/api/hooks/use-stock"
 
 const outwardSchema = z.object({
-  productId: z.string().min(1, "Select a product"),
+  productId: z.string().min(1, "Select a product type"),
   quantity: z.coerce.number().positive("Quantity must be greater than zero"),
-  referenceNumber: z.string().optional(),
+  customerId: z.string().min(1, "Select a customer / party"),
+  date: z.string().min(1, "Date is required"),
+  referenceNumber: z.string().min(1, "Reference / Invoice number is required"),
   remarks: z.string().optional(),
 })
 
@@ -39,12 +42,15 @@ type OutwardValues = z.output<typeof outwardSchema>
 const emptyValues: OutwardInput = {
   productId: "",
   quantity: 0,
+  customerId: "",
+  date: new Date().toISOString().split("T")[0],
   referenceNumber: "",
   remarks: "",
 }
 
 function OutwardEntryForm() {
   const { data: products } = useProducts()
+  const { data: customers } = useCustomers()
   const { data: balances } = useStockBalances()
   const recordOutward = useRecordOutward()
 
@@ -57,6 +63,11 @@ function OutwardEntryForm() {
   const selectedBalance = balances?.find((b) => b.productId === selectedProductId)
 
   async function onSubmit(values: OutwardValues) {
+    const customerName = customers?.find((c) => c.id === values.customerId)?.name
+    const dateStr = values.date ? `[${values.date}]` : ""
+    const partyStr = customerName ? `Party: ${customerName}` : ""
+    const remarkParts = [partyStr, dateStr, values.remarks?.trim()].filter(Boolean)
+
     await recordOutward.mutateAsync(
       {
         productId: values.productId,
@@ -64,7 +75,7 @@ function OutwardEntryForm() {
         referenceNumber: values.referenceNumber?.trim()
           ? values.referenceNumber
           : null,
-        remarks: values.remarks?.trim() ? values.remarks : null,
+        remarks: remarkParts.length > 0 ? remarkParts.join(" | ") : null,
       },
       { onSuccess: () => form.reset(emptyValues) }
     )
@@ -84,17 +95,17 @@ function OutwardEntryForm() {
                 name="productId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Product</FormLabel>
+                    <FormLabel>Type (Product)</FormLabel>
                     <Select value={field.value} onValueChange={field.onChange}>
                       <FormControl>
                         <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Select a product" />
+                          <SelectValue placeholder="Select type" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
                         {products?.map((product) => (
                           <SelectItem key={product.id} value={product.id}>
-                            {product.name} ({product.sku})
+                            {product.name}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -105,6 +116,46 @@ function OutwardEntryForm() {
                         currently on hand
                       </p>
                     )}
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="customerId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Customer / Party Name</FormLabel>
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <FormControl>
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Select customer (optional)" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="">None</SelectItem>
+                        {customers?.map((customer) => (
+                          <SelectItem key={customer.id} value={customer.id}>
+                            {customer.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="date"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Date</FormLabel>
+                    <FormControl>
+                      <Input type="date" {...field} />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -135,7 +186,7 @@ function OutwardEntryForm() {
                 name="referenceNumber"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Reference number</FormLabel>
+                    <FormLabel>Reference / Invoice number</FormLabel>
                     <FormControl>
                       <Input
                         placeholder="e.g. requisition / job number"

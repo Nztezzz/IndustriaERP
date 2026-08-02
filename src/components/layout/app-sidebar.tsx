@@ -27,8 +27,8 @@ export function AppSidebar() {
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
               <Link to="/dashboard">
-                <div className="flex aspect-square size-6 items-center justify-center rounded-md bg-primary text-primary-foreground">
-                  <Factory className="size-3.5" />
+                <div className="flex aspect-square size-7 items-center justify-center rounded-full bg-gradient-to-br from-[#F5820D] to-[#D96A00] shadow-sm shadow-orange-600/20">
+                  <Factory className="size-3.5 text-white" />
                 </div>
                 <span className="font-heading font-semibold">Preyansh ERP</span>
               </Link>

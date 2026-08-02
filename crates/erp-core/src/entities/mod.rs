@@ -3,6 +3,7 @@ pub mod backup;
 pub mod customer;
 pub mod dispatch;
 pub mod dispatch_item;
+pub mod packing_slip;
 pub mod product;
 pub mod reel;
 pub mod reel_movement;

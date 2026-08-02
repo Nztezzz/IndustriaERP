@@ -5,6 +5,7 @@ mod customers;
 mod dashboard;
 mod dispatches;
 mod health;
+mod packing_slips;
 mod products;
 mod reels;
 mod reports;
@@ -32,7 +33,8 @@ pub fn build_router(state: AppState) -> Router {
         .merge(search::router())
         .merge(reports::router())
         .merge(audit_log::router())
-        .merge(backup::router());
+        .merge(backup::router())
+        .merge(packing_slips::router());
 
     Router::new().nest("/api", api).with_state(state)
 }

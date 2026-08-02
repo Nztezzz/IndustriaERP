@@ -31,6 +31,9 @@ src/routeTree.gen.ts
 # path on this machine, not portable -- never commit).
 *.lnk
 
+# Built exe (use `npm run tauri build` to regenerate)
+Preyansh ERP.exe
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

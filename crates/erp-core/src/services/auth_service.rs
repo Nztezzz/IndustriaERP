@@ -110,6 +110,82 @@ fn generate_temp_password() -> String {
         .collect()
 }
 
+/// Changes the password for an existing user. Requires the current
+/// password for verification to prevent unauthorized changes.
+pub async fn change_password(
+    db: &DatabaseConnection,
+    user_id: Uuid,
+    current_password: &str,
+    new_password: &str,
+) -> AppResult<()> {
+    if new_password.len() < 6 {
+        return Err(AppError::Validation(
+            "new password must be at least 6 characters".into(),
+        ));
+    }
+
+    let user_model = user::Entity::find_by_id(user_id)
+        .one(db)
+        .await?
+        .ok_or(AppError::NotFound("user not found".into()))?;
+
+    if !verify_password(current_password, &user_model.password_hash)? {
+        return Err(AppError::Validation(
+            "current password is incorrect".into(),
+        ));
+    }
+
+    let new_hash = hash_password(new_password)?;
+    let mut active: user::ActiveModel = user_model.into();
+    active.password_hash = Set(new_hash);
+    active.updated_at = Set(Utc::now().naive_utc());
+    active.update(db).await?;
+
+    Ok(())
+}
+
+/// Changes the username for an existing user. The new username must be
+/// unique across all users.
+pub async fn change_username(
+    db: &DatabaseConnection,
+    user_id: Uuid,
+    new_username: &str,
+) -> AppResult<String> {
+    let trimmed = new_username.trim();
+    if trimmed.is_empty() {
+        return Err(AppError::Validation("username cannot be empty".into()));
+    }
+    if trimmed.len() < 3 {
+        return Err(AppError::Validation(
+            "username must be at least 3 characters".into(),
+        ));
+    }
+
+    let existing = user::Entity::find()
+        .filter(user::Column::Username.eq(trimmed))
+        .filter(user::Column::Id.ne(user_id))
+        .one(db)
+        .await?;
+    if existing.is_some() {
+        return Err(AppError::Conflict(format!(
+            "username '{}' is already taken",
+            trimmed
+        )));
+    }
+
+    let user_model = user::Entity::find_by_id(user_id)
+        .one(db)
+        .await?
+        .ok_or(AppError::NotFound("user not found".into()))?;
+
+    let mut active: user::ActiveModel = user_model.into();
+    active.username = Set(trimmed.to_string());
+    active.updated_at = Set(Utc::now().naive_utc());
+    active.update(db).await?;
+
+    Ok(trimmed.to_string())
+}
+
 /// Test-only helpers shared across every other service's test module.
 /// Every FK in the schema that points at `users.id` means "some action was
 /// performed_by/created_by a real user row" -- a bare `Uuid::new_v4()`

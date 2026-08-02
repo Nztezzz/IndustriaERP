@@ -74,14 +74,14 @@ export function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-svh items-center justify-center bg-muted/40 p-4">
-      <Card className="w-full max-w-sm">
+    <div className="flex min-h-svh items-center justify-center bg-[#0A0A0A] p-4">
+      <Card className="w-full max-w-sm border-0 bg-[#1C1C1E] shadow-2xl shadow-orange-950/20">
         <CardHeader className="items-center text-center">
-          <div className="mb-2 flex size-10 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <Factory className="size-5" />
+          <div className="mb-3 flex size-14 items-center justify-center rounded-full bg-gradient-to-br from-[#F5820D] to-[#D96A00] shadow-lg shadow-orange-600/30">
+            <Factory className="size-7 text-white" />
           </div>
-          <CardTitle>{APP_NAME}</CardTitle>
-          <CardDescription>Sign in to your account to continue</CardDescription>
+          <CardTitle className="text-xl text-white">{APP_NAME}</CardTitle>
+          <CardDescription className="text-[#A8A39D]">Sign in to your account to continue</CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
@@ -94,12 +94,13 @@ export function LoginPage() {
                 name="username"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Username</FormLabel>
+                    <FormLabel className="text-[#A8A39D]">Username</FormLabel>
                     <FormControl>
                       <Input
                         autoComplete="username"
                         autoFocus
                         placeholder="admin"
+                        className="border-white/10 bg-white/5 text-white placeholder:text-white/30 focus-visible:ring-[#F5820D]"
                         {...field}
                       />
                     </FormControl>
@@ -112,12 +113,13 @@ export function LoginPage() {
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Password</FormLabel>
+                    <FormLabel className="text-[#A8A39D]">Password</FormLabel>
                     <FormControl>
                       <Input
                         type="password"
                         autoComplete="current-password"
                         placeholder="••••••••"
+                        className="border-white/10 bg-white/5 text-white placeholder:text-white/30 focus-visible:ring-[#F5820D]"
                         {...field}
                       />
                     </FormControl>
@@ -125,7 +127,11 @@ export function LoginPage() {
                   </FormItem>
                 )}
               />
-              <Button type="submit" className="mt-2" disabled={isSubmitting}>
+              <Button
+                type="submit"
+                className="mt-2 bg-[#F5820D] text-white hover:bg-[#D96A00] focus-visible:ring-[#F5820D]"
+                disabled={isSubmitting}
+              >
                 {isSubmitting && <Loader2 className="animate-spin" />}
                 Sign in
               </Button>

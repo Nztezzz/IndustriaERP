@@ -8,6 +8,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { ExportButtons } from "@/components/export-buttons"
 import { ReportTableCard } from "@/features/reports/report-table-card"
 import { usePendingReelsReport } from "@/lib/api/hooks/use-reports"
@@ -43,18 +44,41 @@ const COLUMNS: ExportColumn<PendingReelReportRowDto>[] = [
  * param at all (it's a point-in-time snapshot of "what's out right
  * now", not a historical range), so no DateRangeFilter is rendered here.
  */
-export function PendingReelsReportTab() {
+export function PendingReelsReportTab({
+  entryLimit,
+  onEntryLimitChange,
+}: {
+  entryLimit?: number
+  onEntryLimitChange?: (limit: number | undefined) => void
+}) {
   const navigate = useNavigate()
   const { data, isLoading } = usePendingReelsReport()
-  const rows = data ?? []
+  const allRows = data ?? []
+  const rows = entryLimit ? allRows.slice(0, entryLimit) : allRows
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">
-          Reels currently out with a customer, oldest first. This is a live
-          snapshot -- it isn&apos;t filtered by date range.
-        </p>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="text-sm text-muted-foreground">
+            Reels currently out with a customer, oldest first.
+          </p>
+          {onEntryLimitChange && (
+            <div className="flex items-center gap-1.5">
+              <span className="text-sm text-muted-foreground">Show:</span>
+              {[5, 10, undefined].map((limit) => (
+                <Button
+                  key={limit ?? "all"}
+                  variant={entryLimit === limit ? "secondary" : "ghost"}
+                  size="sm"
+                  onClick={() => onEntryLimitChange(limit)}
+                >
+                  {limit ?? "All"}
+                </Button>
+              ))}
+            </div>
+          )}
+        </div>
         <ExportButtons
           baseFileName="pending-reels-report"
           title="Pending Reels Report"

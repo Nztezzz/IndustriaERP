@@ -1,20 +1,44 @@
 import { useState } from "react"
 import { useNavigate } from "@tanstack/react-router"
+import { jsPDF } from "jspdf"
+import { autoTable } from "jspdf-autotable"
 import {
   Building2,
   Disc3,
+  Filter,
   Package,
+  Printer,
   Search,
   Truck,
   type LucideIcon,
 } from "lucide-react"
 import { PageHeader } from "@/components/layout/page-header"
 import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
 import { useSearch } from "@/lib/api/hooks/use-search"
+import { useStockMovements } from "@/lib/api/hooks/use-stock"
+import { useProducts } from "@/lib/api/hooks/use-products"
+import { useCustomers } from "@/lib/api/hooks/use-customers"
 import { useDebouncedValue } from "@/hooks/use-debounced-value"
+import { parseResponseDateTime } from "@/lib/api/datetime"
 import type {
   CustomerSearchHit,
   DispatchSearchHit,
@@ -104,6 +128,291 @@ function HitRow({
   )
 }
 
+/** Party ledger view matching the reference spreadsheet format */
+function RecentEntriesSection() {
+  const { data: products } = useProducts()
+  const { data: allCustomers } = useCustomers()
+  const [filterCustomer, setFilterCustomer] = useState<string>("")
+  const [filterProduct, setFilterProduct] = useState<string>("")
+  const [filterDate, setFilterDate] = useState<string>("")
+  const [entryCount, setEntryCount] = useState<number>(10)
+
+  // Fetch recent movements
+  const { data: movements } = useStockMovements({
+    productId: filterProduct || undefined,
+    page: 0,
+    pageSize: entryCount,
+    from: filterDate ? `${filterDate}T00:00:00` : undefined,
+  })
+
+  // Fetch ALL movements for old-data totals (larger page)
+  const { data: allMovements } = useStockMovements({
+    productId: filterProduct || undefined,
+    page: 0,
+    pageSize: 500,
+    from: filterDate ? `${filterDate}T00:00:00` : undefined,
+  })
+
+  // Filter by customer if selected (customer name is stored in remarks as "Party: xyz")
+  const rows = (movements?.items ?? []).filter((m) => {
+    if (!filterCustomer) return true
+    const customer = allCustomers?.find((c) => c.id === filterCustomer)
+    if (!customer) return true
+    return m.remarks?.includes(customer.name) ?? false
+  })
+
+  // All entries filtered by customer (for old data total)
+  const allRows = (allMovements?.items ?? []).filter((m) => {
+    if (!filterCustomer) return true
+    const customer = allCustomers?.find((c) => c.id === filterCustomer)
+    if (!customer) return true
+    return m.remarks?.includes(customer.name) ?? false
+  })
+
+  // Old data = everything beyond the displayed entries
+  const oldRows = allRows.slice(entryCount)
+
+  // Build the product columns (the 5 product types)
+  const productColumns = products ?? []
+  const pReel = productColumns.find(p => p.name === "Plastic Reel")
+  const otherProducts = productColumns.filter(p => p.name !== "Plastic Reel")
+
+  // Calculate totals per product
+  const totals: Record<string, number> = {}
+  for (const row of rows) {
+    const key = row.productId
+    const qty = row.movementType === "outward" ? row.quantity : row.movementType === "inward" ? -row.quantity : (row.adjustmentDelta ?? 0)
+    totals[key] = (totals[key] ?? 0) + qty
+  }
+
+  function handlePrint() {
+    const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" })
+    const pageWidth = doc.internal.pageSize.getWidth()
+
+    // Header
+    doc.setFontSize(14)
+    doc.setFont("helvetica", "bold")
+    doc.text("PREYANSH METAL INDUSTRIES LLP", pageWidth / 2, 12, { align: "center" })
+    doc.setFontSize(9)
+    doc.setFont("helvetica", "normal")
+    doc.setTextColor(80)
+    doc.text("Party Ledger", pageWidth / 2, 17, { align: "center" })
+
+    const customerName = filterCustomer
+      ? allCustomers?.find((c) => c.id === filterCustomer)?.name ?? "All"
+      : "All Parties"
+    doc.setTextColor(30)
+    doc.setFontSize(10)
+    doc.text(`Party: ${customerName}`, 14, 24)
+    if (filterDate) doc.text(`From: ${filterDate}`, pageWidth - 60, 24)
+
+    // Table columns
+    const heads = ["#", "Party Name", "Date", "P. Reel", ...productColumns.filter(p => p.name !== "Plastic Reel").map(p => p.name)]
+    const pReel = productColumns.find(p => p.name === "Plastic Reel")
+    const otherProducts = productColumns.filter(p => p.name !== "Plastic Reel")
+
+    const bodyData = rows.map((m, i) => {
+      // Extract party name from remarks
+      const partyMatch = m.remarks?.match(/Party:\s*([^|]+)/)
+      const party = partyMatch?.[1]?.trim() ?? "\u2014"
+      // Extract date from remarks
+      const dateMatch = m.remarks?.match(/\[(\d{4}-\d{2}-\d{2})\]/)
+      const dateStr = dateMatch?.[1] ?? parseResponseDateTime(m.createdAt).toLocaleDateString()
+
+      const isReturn = m.movementType === "inward"
+      const pReelVal = m.productId === pReel?.id ? (isReturn ? "RETURN" : String(m.quantity)) : "0"
+
+      const otherVals = otherProducts.map(p => {
+        if (m.productId !== p.id) return "0"
+        return isReturn ? String(-m.quantity) : String(m.quantity)
+      })
+
+      return [String(i + 1), party, dateStr, pReelVal, ...otherVals]
+    })
+
+    // Totals row
+    const pReelTotal = rows.reduce((s, m) => m.productId === pReel?.id ? s + (m.movementType === "outward" ? m.quantity : -m.quantity) : s, 0)
+    const otherTotals = otherProducts.map(p =>
+      rows.reduce((s, m) => m.productId === p.id ? s + (m.movementType === "outward" ? m.quantity : -m.quantity) : s, 0)
+    )
+    bodyData.push(["", "", "TOTAL", String(pReelTotal), ...otherTotals.map(String)])
+
+    autoTable(doc, {
+      startY: 28,
+      head: [heads],
+      body: bodyData,
+      theme: "grid",
+      headStyles: { fillColor: [245, 130, 13], textColor: 255, fontStyle: "bold", fontSize: 8 },
+      bodyStyles: { fontSize: 8 },
+      didParseCell: (data) => {
+        if (data.row.index === bodyData.length - 1) {
+          data.cell.styles.fontStyle = "bold"
+          data.cell.styles.fillColor = [240, 239, 237]
+        }
+      },
+    })
+
+    const pdfBlob = doc.output("blob")
+    const url = URL.createObjectURL(pdfBlob)
+    const iframe = document.createElement("iframe")
+    iframe.style.position = "fixed"
+    iframe.style.top = "-10000px"
+    iframe.style.left = "-10000px"
+    iframe.style.width = "0"
+    iframe.style.height = "0"
+    iframe.style.border = "none"
+    iframe.style.overflow = "hidden"
+    iframe.src = url
+    document.body.appendChild(iframe)
+    iframe.onload = () => {
+      setTimeout(() => {
+        iframe.contentWindow?.print()
+        setTimeout(() => {
+          document.body.removeChild(iframe)
+          URL.revokeObjectURL(url)
+        }, 600000)
+      }, 500)
+    }
+  }
+
+  // For display
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Filter className="size-4 text-muted-foreground" />
+          <CardTitle className="text-sm">Party Ledger (Last {entryCount})</CardTitle>
+        </div>
+        <Button variant="outline" size="sm" onClick={handlePrint} disabled={rows.length === 0}>
+          <Printer /> Print
+        </Button>
+      </CardHeader>
+      <CardContent>
+        <div className="mb-4 flex flex-wrap items-center gap-2">
+          <Select value={filterCustomer} onValueChange={setFilterCustomer}>
+            <SelectTrigger className="w-56">
+              <SelectValue placeholder="All parties" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">All parties</SelectItem>
+              {allCustomers?.map((c) => (
+                <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={filterProduct} onValueChange={setFilterProduct}>
+            <SelectTrigger className="w-48">
+              <SelectValue placeholder="All products" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">All products</SelectItem>
+              {products?.map((p) => (
+                <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Input
+            type="date"
+            className="w-44"
+            value={filterDate}
+            onChange={(e) => setFilterDate(e.target.value)}
+          />
+          <div className="flex items-center gap-1 rounded-md border p-0.5">
+            {[5, 10].map((n) => (
+              <Button
+                key={n}
+                variant={entryCount === n ? "secondary" : "ghost"}
+                size="sm"
+                onClick={() => setEntryCount(n)}
+              >
+                Last {n}
+              </Button>
+            ))}
+          </div>
+          {(filterCustomer || filterProduct || filterDate) && (
+            <Button variant="ghost" size="sm" onClick={() => { setFilterCustomer(""); setFilterProduct(""); setFilterDate("") }}>
+              Clear
+            </Button>
+          )}
+        </div>
+
+        {rows.length === 0 ? (
+          <p className="py-8 text-center text-sm text-muted-foreground">No entries found.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Party Name</TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead className="text-center">P. Reel</TableHead>
+                  {otherProducts.map((p) => (
+                    <TableHead key={p.id} className="text-center">{p.name.replace(" mm Spool", " MM")}</TableHead>
+                  ))}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {rows.map((m) => {
+                  const partyMatch = m.remarks?.match(/Party:\s*([^|]+)/)
+                  const party = partyMatch?.[1]?.trim() ?? "\u2014"
+                  const dateMatch = m.remarks?.match(/\[(\d{4}-\d{2}-\d{2})\]/)
+                  const dateStr = dateMatch?.[1] ?? parseResponseDateTime(m.createdAt).toLocaleDateString()
+                  const isReturn = m.movementType === "inward"
+
+                  return (
+                    <TableRow key={m.id}>
+                      <TableCell className="font-medium">{party}</TableCell>
+                      <TableCell>{dateStr}</TableCell>
+                      <TableCell className="text-center tabular-nums">
+                        {m.productId === pReel?.id
+                          ? isReturn ? <span className="text-primary font-medium">RETURN</span> : m.quantity
+                          : 0}
+                      </TableCell>
+                      {otherProducts.map((p) => (
+                        <TableCell key={p.id} className="text-center tabular-nums">
+                          {m.productId === p.id
+                            ? isReturn ? String(-m.quantity) : String(m.quantity)
+                            : "0"}
+                        </TableCell>
+                      ))}
+                    </TableRow>
+                  )
+                })}
+                {/* Old data totals row */}
+                <TableRow className="border-t bg-muted/30 italic">
+                  <TableCell></TableCell>
+                  <TableCell className="text-muted-foreground">OLD</TableCell>
+                  <TableCell className="text-center tabular-nums">
+                    {oldRows.reduce((s, m) => m.productId === pReel?.id ? s + (m.movementType === "outward" ? m.quantity : -m.quantity) : s, 0)}
+                  </TableCell>
+                  {otherProducts.map((p) => (
+                    <TableCell key={p.id} className="text-center tabular-nums">
+                      {oldRows.reduce((s, m) => m.productId === p.id ? s + (m.movementType === "outward" ? m.quantity : -m.quantity) : s, 0)}
+                    </TableCell>
+                  ))}
+                </TableRow>
+                {/* Grand total row (current + old) */}
+                <TableRow className="border-t-2 font-bold bg-muted/50">
+                  <TableCell></TableCell>
+                  <TableCell>TOTAL</TableCell>
+                  <TableCell className="text-center tabular-nums">
+                    {allRows.reduce((s, m) => m.productId === pReel?.id ? s + (m.movementType === "outward" ? m.quantity : -m.quantity) : s, 0)}
+                  </TableCell>
+                  {otherProducts.map((p) => (
+                    <TableCell key={p.id} className="text-center tabular-nums">
+                      {allRows.reduce((s, m) => m.productId === p.id ? s + (m.movementType === "outward" ? m.quantity : -m.quantity) : s, 0)}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              </TableBody>
+            </Table>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
+
 export function GlobalSearchPage() {
   const navigate = useNavigate()
   const [query, setQuery] = useState("")
@@ -122,7 +431,7 @@ export function GlobalSearchPage() {
     <>
       <PageHeader
         title="Search"
-        description="Search across customers, products, reels, invoices, and dates."
+        description="Search across customers, products, reels, invoices, and filter recent entries."
       />
 
       <div className="flex flex-col gap-4 p-6">
@@ -137,14 +446,10 @@ export function GlobalSearchPage() {
           />
         </div>
 
-        {!hasQuery ? (
-          <p className="text-sm text-muted-foreground">
-            Start typing to search across every module at once. Each list
-            page (Products, Customers, Inventory History, Dispatches, Reel
-            Tracking) also has its own filters for narrower, module-specific
-            searches.
-          </p>
-        ) : (
+        {/* Filtered recent entries section - always visible */}
+        <RecentEntriesSection />
+
+        {hasQuery && (
           <>
             {!isFetching && totalHits === 0 && (
               <p className="text-sm text-muted-foreground">

@@ -53,35 +53,41 @@ export function ReelActionDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
-          <DialogDescription>{description}</DialogDescription>
-        </DialogHeader>
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="reel-action-remarks">
-            Remarks {remarksRequired && <span className="text-destructive">*</span>}
-          </Label>
-          <Textarea
-            id="reel-action-remarks"
-            value={remarks}
-            onChange={(e) => setRemarks(e.target.value)}
-            placeholder={remarksRequired ? "Reason is required" : "Optional"}
-          />
-        </div>
-        <DialogFooter>
-          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button
-            type="button"
-            variant={confirmVariant}
-            disabled={!canConfirm || isPending}
-            onClick={() => onConfirm(remarks)}
-          >
-            {isPending && <Loader2 className="animate-spin" />}
-            {confirmLabel}
-          </Button>
-        </DialogFooter>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault()
+            if (canConfirm && !isPending) onConfirm(remarks)
+          }}
+        >
+          <DialogHeader>
+            <DialogTitle>{title}</DialogTitle>
+            <DialogDescription>{description}</DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-2 py-4">
+            <Label htmlFor="reel-action-remarks">
+              Remarks {remarksRequired && <span className="text-destructive">*</span>}
+            </Label>
+            <Textarea
+              id="reel-action-remarks"
+              value={remarks}
+              onChange={(e) => setRemarks(e.target.value)}
+              placeholder={remarksRequired ? "Reason is required" : "Optional"}
+            />
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              variant={confirmVariant}
+              disabled={!canConfirm || isPending}
+            >
+              {isPending && <Loader2 className="animate-spin" />}
+              {confirmLabel}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   )

@@ -13,6 +13,7 @@ mod m20260725_000004_create_dispatches;
 mod m20260725_000005_create_reels;
 mod m20260725_000006_create_stock_ledger;
 mod m20260725_000007_create_audit_and_backups;
+mod m20260801_000008_create_packing_slips;
 
 pub struct Migrator;
 
@@ -31,6 +32,7 @@ impl MigratorTrait for Migrator {
             Box::new(m20260725_000005_create_reels::Migration),
             Box::new(m20260725_000006_create_stock_ledger::Migration),
             Box::new(m20260725_000007_create_audit_and_backups::Migration),
+            Box::new(m20260801_000008_create_packing_slips::Migration),
         ]
     }
 }

@@ -6,15 +6,13 @@ import {
   SlidersHorizontal,
   History,
   Package,
-  Ruler,
   Users,
   Truck,
   Disc3,
   Search,
   FileBarChart,
-  DatabaseBackup,
+  FileText,
   UserCog,
-  ScrollText,
 } from "lucide-react"
 import type { Role } from "@/lib/constants"
 
@@ -34,7 +32,10 @@ export interface NavGroup {
 export const NAV_GROUPS: NavGroup[] = [
   {
     label: "Overview",
-    items: [{ title: "Dashboard", url: "/dashboard", icon: LayoutDashboard }],
+    items: [
+      { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
+      { title: "Search", url: "/search", icon: Search },
+    ],
   },
   {
     label: "Inventory",
@@ -66,43 +67,27 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { title: "Dispatches", url: "/dispatches", icon: Truck },
       { title: "Reel Tracking", url: "/reels", icon: Disc3 },
+      { title: "Packing Slip", url: "/packing-slip", icon: FileText },
     ],
   },
   {
     label: "Master Data",
     items: [
       { title: "Products", url: "/products", icon: Package },
-      { title: "Units", url: "/units", icon: Ruler },
       { title: "Customers", url: "/customers", icon: Users },
     ],
   },
   {
     label: "Insights",
-    items: [
-      { title: "Search", url: "/search", icon: Search },
-      { title: "Reports", url: "/reports", icon: FileBarChart },
-    ],
+    items: [{ title: "Reports", url: "/reports", icon: FileBarChart }],
   },
   {
     label: "Administration",
     items: [
       {
-        title: "Users & Roles",
-        url: "/settings/users",
+        title: "Settings",
+        url: "/settings/profile",
         icon: UserCog,
-        minRole: "admin",
-      },
-      {
-        title: "Backup & Restore",
-        url: "/settings/backup",
-        icon: DatabaseBackup,
-        minRole: "admin",
-      },
-      {
-        title: "Audit Log",
-        url: "/settings/audit-log",
-        icon: ScrollText,
-        minRole: "admin",
       },
     ],
   },

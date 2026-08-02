@@ -18,6 +18,25 @@ export function useStockMovements(query: stockApi.MovementsQuery = {}) {
   })
 }
 
+export function useStockMovement(id: string | undefined) {
+  return useQuery({
+    queryKey: ["stock", "movement", id] as const,
+    queryFn: () => stockApi.fetchStockMovement(id!),
+    enabled: !!id,
+  })
+}
+
+export function useDeleteMovements() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (ids: string[]) => stockApi.deleteMovements(ids),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.stock.movements({}) })
+      queryClient.invalidateQueries({ queryKey: queryKeys.stock.balances() })
+    },
+  })
+}
+
 /** Any stock movement affects balances, movement history, AND the dashboard. */
 function invalidateStockRelated(queryClient: ReturnType<typeof useQueryClient>) {
   queryClient.invalidateQueries({ queryKey: queryKeys.stock.balances() })

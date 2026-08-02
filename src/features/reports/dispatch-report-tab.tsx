@@ -41,17 +41,22 @@ const COLUMNS: ExportColumn<DispatchReportRowDto>[] = [
 export function DispatchReportTab({
   range,
   onRangeChange,
+  entryLimit,
+  onEntryLimitChange,
 }: {
   range: ReportDateRange
   onRangeChange: (range: ReportDateRange) => void
+  entryLimit?: number
+  onEntryLimitChange?: (limit: number | undefined) => void
 }) {
   const { data, isLoading } = useDispatchReport(toReportRangeQuery(range))
-  const rows = data ?? []
+  const allRows = data ?? []
+  const rows = entryLimit ? allRows.slice(0, entryLimit) : allRows
 
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <DateRangeFilter value={range} onChange={onRangeChange} />
+        <DateRangeFilter value={range} onChange={onRangeChange} showEntryLimit entryLimit={entryLimit} onEntryLimitChange={onEntryLimitChange} />
         <ExportButtons
           baseFileName="dispatch-report"
           title="Dispatch Report"

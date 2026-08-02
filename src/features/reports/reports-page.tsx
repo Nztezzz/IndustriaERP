@@ -20,6 +20,7 @@ import type { ReportDateRange } from "@/features/reports/date-range-filter"
  */
 export function ReportsPage() {
   const [range, setRange] = useState<ReportDateRange>({})
+  const [entryLimit, setEntryLimit] = useState<number | undefined>(undefined)
 
   return (
     <>
@@ -37,19 +38,19 @@ export function ReportsPage() {
             <TabsTrigger value="dispatches">Dispatches</TabsTrigger>
           </TabsList>
           <TabsContent value="product-wise" className="pt-4">
-            <ProductWiseReportTab range={range} onRangeChange={setRange} />
+            <ProductWiseReportTab range={range} onRangeChange={setRange} entryLimit={entryLimit} onEntryLimitChange={setEntryLimit} />
           </TabsContent>
           <TabsContent value="customer-wise" className="pt-4">
-            <CustomerWiseReportTab range={range} onRangeChange={setRange} />
+            <CustomerWiseReportTab range={range} onRangeChange={setRange} entryLimit={entryLimit} onEntryLimitChange={setEntryLimit} />
           </TabsContent>
           <TabsContent value="daily-activity" className="pt-4">
-            <DailyActivityReportTab range={range} onRangeChange={setRange} />
+            <DailyActivityReportTab range={range} onRangeChange={setRange} entryLimit={entryLimit} onEntryLimitChange={setEntryLimit} />
           </TabsContent>
           <TabsContent value="pending-reels" className="pt-4">
-            <PendingReelsReportTab />
+            <PendingReelsReportTab entryLimit={entryLimit} onEntryLimitChange={setEntryLimit} />
           </TabsContent>
           <TabsContent value="dispatches" className="pt-4">
-            <DispatchReportTab range={range} onRangeChange={setRange} />
+            <DispatchReportTab range={range} onRangeChange={setRange} entryLimit={entryLimit} onEntryLimitChange={setEntryLimit} />
           </TabsContent>
         </Tabs>
       </div>

@@ -72,9 +72,16 @@ const PRESETS: { label: string; range: () => ReportDateRange }[] = [
 export function DateRangeFilter({
   value,
   onChange,
+  showEntryLimit,
+  entryLimit,
+  onEntryLimitChange,
 }: {
   value: ReportDateRange
   onChange: (range: ReportDateRange) => void
+  /** Show a "Last N entries" dropdown alongside the date range. */
+  showEntryLimit?: boolean
+  entryLimit?: number
+  onEntryLimitChange?: (limit: number | undefined) => void
 }) {
   const [open, setOpen] = useState(false)
 
@@ -142,6 +149,21 @@ export function DateRangeFilter({
           <X />
           Clear
         </Button>
+      )}
+      {showEntryLimit && onEntryLimitChange && (
+        <div className="flex items-center gap-1.5">
+          <span className="text-sm text-muted-foreground">Show:</span>
+          {[5, 10, undefined].map((limit) => (
+            <Button
+              key={limit ?? "all"}
+              variant={entryLimit === limit ? "secondary" : "ghost"}
+              size="sm"
+              onClick={() => onEntryLimitChange(limit)}
+            >
+              {limit ?? "All"}
+            </Button>
+          ))}
+        </div>
       )}
     </div>
   )

@@ -43,6 +43,10 @@ export function fetchStockBalances() {
   return apiRequest<StockBalanceDto[]>("/stock/balances")
 }
 
+export function fetchStockMovement(id: string) {
+  return apiRequest<StockMovementDto>(`/stock/movements/${id}`)
+}
+
 export function fetchStockMovements(query: MovementsQuery = {}) {
   return apiRequest<PagedResult<StockMovementDto>>("/stock/movements", {
     query,
@@ -67,5 +71,12 @@ export function recordAdjustment(input: AdjustmentInput) {
   return apiRequest<StockMovementDto>("/stock/adjustment", {
     method: "POST",
     body: input,
+  })
+}
+
+export function deleteMovements(ids: string[]) {
+  return apiRequest<{ deleted: number }>("/stock/movements/delete", {
+    method: "POST",
+    body: { ids },
   })
 }

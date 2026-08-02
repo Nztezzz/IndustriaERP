@@ -84,13 +84,18 @@ function toMonthly(rows: DailyActivitySummaryDto[]): MonthlyRow[] {
 export function DailyActivityReportTab({
   range,
   onRangeChange,
+  entryLimit,
+  onEntryLimitChange,
 }: {
   range: ReportDateRange
   onRangeChange: (range: ReportDateRange) => void
+  entryLimit?: number
+  onEntryLimitChange?: (limit: number | undefined) => void
 }) {
   const [granularity, setGranularity] = useState<"daily" | "monthly">("daily")
   const { data, isLoading } = useDailyActivityReport(toReportRangeQuery(range))
-  const dailyRows = data ?? []
+  const allDailyRows = data ?? []
+  const dailyRows = entryLimit ? allDailyRows.slice(0, entryLimit) : allDailyRows
   const monthlyRows = useMemo(() => toMonthly(dailyRows), [dailyRows])
 
   // Daily and monthly rows share the same count fields but a differently
@@ -120,7 +125,7 @@ export function DailyActivityReportTab({
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex flex-wrap items-center gap-2">
-          <DateRangeFilter value={range} onChange={onRangeChange} />
+          <DateRangeFilter value={range} onChange={onRangeChange} showEntryLimit entryLimit={entryLimit} onEntryLimitChange={onEntryLimitChange} />
           <div className="flex items-center rounded-md border p-0.5">
             <Button
               variant={granularity === "daily" ? "secondary" : "ghost"}
