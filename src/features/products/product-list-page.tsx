@@ -34,6 +34,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { EmptyState } from "@/components/layout/empty-state"
 import { useDeactivateProduct, useProducts } from "@/lib/api/hooks/use-products"
 import { ProductFormDialog } from "@/features/products/product-form-dialog"
 import type { ProductDto } from "@/lib/api/types"
@@ -124,14 +125,25 @@ export function ProductListPage() {
                 ))}
               </div>
             ) : !products || products.length === 0 ? (
-              <div className="flex flex-col items-center gap-2 py-16 text-center text-muted-foreground">
-                <Package className="size-8" />
-                <p className="text-sm">
-                  {search
-                    ? "No products match your search."
-                    : "No products yet. Create one to get started."}
-                </p>
-              </div>
+              <EmptyState
+                icon={Package}
+                title={search ? "No matching products" : "No products yet"}
+                description={
+                  search
+                    ? "Try a different name or SKU, or clear the search box."
+                    : "Add your first product to start tracking stock against it."
+                }
+                action={
+                  !search ? (
+                    <RequireRole minRole="operator" fallback={null}>
+                      <Button size="sm" onClick={openCreate}>
+                        <Plus />
+                        New product
+                      </Button>
+                    </RequireRole>
+                  ) : undefined
+                }
+              />
             ) : (
               <Table>
                 <TableHeader>

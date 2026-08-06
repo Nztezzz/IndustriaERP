@@ -15,6 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { EmptyState } from "@/components/layout/empty-state"
 import { useStockBalances } from "@/lib/api/hooks/use-stock"
 import { parseResponseDateTime } from "@/lib/api/datetime"
 
@@ -57,7 +58,7 @@ export function StockOverviewPage() {
             className="max-w-sm"
           />
           {lowStockCount > 0 && (
-            <Badge variant="destructive" className="gap-1">
+            <Badge variant="warning" className="gap-1">
               <AlertTriangle className="size-3" />
               {lowStockCount} at or below reorder level
             </Badge>
@@ -73,14 +74,15 @@ export function StockOverviewPage() {
                 ))}
               </div>
             ) : !filtered || filtered.length === 0 ? (
-              <div className="flex flex-col items-center gap-2 py-16 text-center text-muted-foreground">
-                <Package className="size-8" />
-                <p className="text-sm">
-                  {search
-                    ? "No products match your search."
-                    : "No active products yet."}
-                </p>
-              </div>
+              <EmptyState
+                icon={Package}
+                title={search ? "No matching products" : "No active products"}
+                description={
+                  search
+                    ? "Try a different name or SKU, or clear the search box."
+                    : "Add a product first, then record inward stock against it."
+                }
+              />
             ) : (
               <Table>
                 <TableHeader>
@@ -120,7 +122,7 @@ export function StockOverviewPage() {
                       </TableCell>
                       <TableCell>
                         {balance.isLowStock && (
-                          <Badge variant="destructive" className="gap-1">
+                          <Badge variant="warning" className="gap-1">
                             <AlertTriangle className="size-3" />
                             Low stock
                           </Badge>

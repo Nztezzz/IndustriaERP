@@ -1,5 +1,4 @@
 import { Link, useRouterState } from "@tanstack/react-router"
-import { Factory } from "lucide-react"
 import {
   Sidebar,
   SidebarContent,
@@ -27,9 +26,7 @@ export function AppSidebar() {
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
               <Link to="/dashboard">
-                <div className="flex aspect-square size-7 items-center justify-center rounded-full bg-gradient-to-br from-[#F5820D] to-[#D96A00] shadow-sm shadow-orange-600/20">
-                  <Factory className="size-3.5 text-white" />
-                </div>
+                <img src="/logo.png" alt="Preyansh ERP" className="size-8 object-contain" />
                 <span className="font-heading font-semibold">Preyansh ERP</span>
               </Link>
             </SidebarMenuButton>

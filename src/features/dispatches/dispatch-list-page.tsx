@@ -5,8 +5,9 @@ import { PageHeader } from "@/components/layout/page-header"
 import { RequireRole } from "@/components/layout/require-role"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
+import { DispatchStatusBadge } from "@/components/ui/status-badge"
+import { EmptyState } from "@/components/layout/empty-state"
 import {
   Table,
   TableBody,
@@ -19,15 +20,8 @@ import { useDispatches } from "@/lib/api/hooks/use-dispatches"
 import { useCustomers } from "@/lib/api/hooks/use-customers"
 import { parseResponseDateTime } from "@/lib/api/datetime"
 import { DispatchFormSheet } from "@/features/dispatches/dispatch-form-sheet"
-import type { DispatchStatus } from "@/lib/constants"
 
 const PAGE_SIZE = 25
-
-const STATUS_VARIANT: Record<DispatchStatus, "outline" | "secondary" | "destructive"> = {
-  pending: "outline",
-  delivered: "secondary",
-  cancelled: "destructive",
-}
 
 export function DispatchListPage() {
   const navigate = useNavigate()
@@ -63,10 +57,19 @@ export function DispatchListPage() {
                 ))}
               </div>
             ) : !data || data.items.length === 0 ? (
-              <div className="flex flex-col items-center gap-2 py-16 text-center text-muted-foreground">
-                <Truck className="size-8" />
-                <p className="text-sm">No dispatches yet.</p>
-              </div>
+              <EmptyState
+                icon={Truck}
+                title="No dispatches yet"
+                description="Create your first dispatch to record invoice, vehicle, and driver details."
+                action={
+                  <RequireRole minRole="operator" fallback={null}>
+                    <Button size="sm" onClick={() => setFormOpen(true)}>
+                      <Plus />
+                      New dispatch
+                    </Button>
+                  </RequireRole>
+                }
+              />
             ) : (
               <Table>
                 <TableHeader>
@@ -103,9 +106,7 @@ export function DispatchListPage() {
                           {dispatch.totalWeightKg ? `${dispatch.totalWeightKg} kg` : "—"}
                         </TableCell>
                         <TableCell>
-                          <Badge variant={STATUS_VARIANT[dispatch.status]} className="capitalize">
-                            {dispatch.status}
-                          </Badge>
+                          <DispatchStatusBadge status={dispatch.status} />
                         </TableCell>
                       </TableRow>
                     )

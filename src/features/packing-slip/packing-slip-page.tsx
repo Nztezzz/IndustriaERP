@@ -7,6 +7,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { PageHeader } from "@/components/layout/page-header"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { addLogoToPdf } from "@/lib/logo-data"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -26,6 +27,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { EmptyState } from "@/components/layout/empty-state"
 import { useCustomers } from "@/lib/api/hooks/use-customers"
 import {
   fetchPackingSlips,
@@ -47,7 +49,7 @@ function computeNet(gross: string, tare: string): number {
   return Math.max(0, +(g - t).toFixed(3))
 }
 
-function buildPdfDoc(
+async function buildPdfDoc(
   partyName: string,
   invoiceNo: string,
   date: string,
@@ -57,7 +59,7 @@ function buildPdfDoc(
   totalGross: number,
   totalTare: number,
   totalNet: number,
-): jsPDF {
+): Promise<jsPDF> {
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" })
   const pageWidth = doc.internal.pageSize.getWidth()
   const margin = 14
@@ -66,6 +68,12 @@ function buildPdfDoc(
   doc.setDrawColor(245, 130, 13)
   doc.setLineWidth(1.5)
   doc.line(margin, 10, pageWidth - margin, 10)
+
+  // Logo on left (maintain 677:369 aspect ratio)
+  await addLogoToPdf(doc, margin, 11, 22, 12)
+
+  // Logo on right
+  await addLogoToPdf(doc, pageWidth - margin - 22, 11, 22, 12)
 
   doc.setFontSize(18)
   doc.setFont("helvetica", "bold")
@@ -359,8 +367,8 @@ function PreviousRecordsTab() {
     enabled: !!selectedId,
   })
 
-  function handlePrint(slip: PackingSlipDto) {
-    const doc = buildPdfDoc(
+  async function handlePrint(slip: PackingSlipDto) {
+    const doc = await buildPdfDoc(
       slip.partyName, slip.invoiceNo, slip.date,
       slip.tempoNo || "", slip.totalParcel || "",
       slip.lineItems, slip.totalGross, slip.totalTare, slip.totalNet,
@@ -455,10 +463,11 @@ function PreviousRecordsTab() {
             {Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-9 w-full" />)}
           </div>
         ) : !slips || slips.length === 0 ? (
-          <div className="flex flex-col items-center gap-2 py-16 text-muted-foreground">
-            <History className="size-8" />
-            <p className="text-sm">No packing slips recorded yet.</p>
-          </div>
+          <EmptyState
+            icon={History}
+            title="No packing slips yet"
+            description="Slips you save from the New Slip tab will appear here, ready to reprint."
+          />
         ) : (
           <Table>
             <TableHeader>

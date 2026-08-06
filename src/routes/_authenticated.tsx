@@ -1,4 +1,9 @@
-import { createFileRoute, Outlet, useNavigate } from "@tanstack/react-router"
+import {
+  createFileRoute,
+  Outlet,
+  useNavigate,
+  useRouterState,
+} from "@tanstack/react-router"
 import { useEffect } from "react"
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar"
 import { AppSidebar } from "@/components/layout/app-sidebar"
@@ -25,6 +30,7 @@ function AuthenticatedLayout() {
   const navigate = useNavigate()
   const token = useAuthStore((s) => s.token)
   const hasHydrated = useAuthStore((s) => s.hasHydrated)
+  const pathname = useRouterState({ select: (s) => s.location.pathname })
 
   useEffect(() => {
     if (hasHydrated && !token) {
@@ -41,7 +47,14 @@ function AuthenticatedLayout() {
       <AppSidebar />
       <SidebarInset>
         <AppHeader />
-        <Outlet />
+        {/*
+         * Keying on pathname re-mounts this wrapper on every navigation,
+         * which re-triggers the short `page-enter` fade+rise. Cheap way to
+         * get page transitions without a route-level animation library.
+         */}
+        <div key={pathname} className="page-enter flex flex-1 flex-col">
+          <Outlet />
+        </div>
       </SidebarInset>
     </SidebarProvider>
   )

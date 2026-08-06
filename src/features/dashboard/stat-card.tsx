@@ -1,4 +1,4 @@
-import type { LucideIcon } from "lucide-react"
+import { TrendingDown, TrendingUp, type LucideIcon } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
@@ -10,6 +10,14 @@ interface StatCardProps {
   hint?: string
   /** "warning" accents the icon for attention-worthy counts (e.g. low stock). */
   tone?: "default" | "warning"
+  /**
+   * Marks this as THE headline metric on the page. Only one card per grid
+   * should set this -- it gets the orange accent bar so the brand colour
+   * points at a single place rather than competing across every tile.
+   */
+  primary?: boolean
+  /** Optional period-over-period change, rendered as a small up/down chip. */
+  trend?: { value: number; label?: string }
   isLoading?: boolean
 }
 
@@ -24,32 +32,70 @@ export function StatCard({
   icon: Icon,
   hint,
   tone = "default",
+  primary = false,
+  trend,
   isLoading,
 }: StatCardProps) {
+  const isUp = (trend?.value ?? 0) >= 0
+
   return (
-    <Card>
-      <CardContent className="flex items-center gap-3">
+    <Card className="relative hover:shadow-md">
+      {/* Accent bar: orange only on the single most important metric. */}
+      {primary && (
+        <span
+          aria-hidden
+          className="absolute inset-y-0 left-0 w-1 rounded-l-xl bg-primary"
+        />
+      )}
+      <CardContent className="flex items-start gap-4">
         <div
           className={cn(
-            "flex size-10 shrink-0 items-center justify-center rounded-lg",
+            "flex size-11 shrink-0 items-center justify-center rounded-xl",
             tone === "warning"
-              ? "bg-destructive/10 text-destructive"
-              : "bg-primary/10 text-primary"
+              ? "bg-warning/12 text-warning"
+              : primary
+                ? "bg-primary/10 text-primary"
+                : "bg-muted text-muted-foreground"
           )}
         >
           <Icon className="size-5" />
         </div>
-        <div className="flex min-w-0 flex-col">
+
+        <div className="flex min-w-0 flex-col gap-0.5">
           {isLoading ? (
-            <Skeleton className="h-7 w-12" />
+            <Skeleton className="h-8 w-16" />
           ) : (
-            <span className="font-heading text-2xl font-semibold tabular-nums leading-tight">
-              {value}
-            </span>
+            <div className="flex items-baseline gap-2">
+              <span className="font-heading text-3xl leading-none font-semibold tabular-nums tracking-tight">
+                {value}
+              </span>
+              {trend && (
+                <span
+                  className={cn(
+                    "inline-flex items-center gap-0.5 text-xs font-medium",
+                    isUp ? "text-success" : "text-destructive"
+                  )}
+                >
+                  {isUp ? (
+                    <TrendingUp className="size-3" />
+                  ) : (
+                    <TrendingDown className="size-3" />
+                  )}
+                  {Math.abs(trend.value)}
+                  {trend.label && (
+                    <span className="font-normal text-muted-foreground">
+                      {trend.label}
+                    </span>
+                  )}
+                </span>
+              )}
+            </div>
           )}
-          <span className="text-sm text-muted-foreground">{label}</span>
+          <span className="text-sm font-medium text-muted-foreground">
+            {label}
+          </span>
           {hint && (
-            <span className="text-xs text-muted-foreground/80">{hint}</span>
+            <span className="text-xs text-muted-foreground/70">{hint}</span>
           )}
         </div>
       </CardContent>

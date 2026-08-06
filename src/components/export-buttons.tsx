@@ -11,6 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { exportToExcel, exportToPdf, type ExportColumn } from "@/lib/export"
+import { addLogoToPdf } from "@/lib/logo-data"
 
 /**
  * Shared Excel/PDF export + print toolbar for every report tab.
@@ -40,12 +41,16 @@ export function ExportButtons<T>({
     }
   }
 
-  function handlePrint() {
+  async function handlePrint() {
     const count = printCount === "all" ? rows.length : parseInt(printCount, 10)
     const printRows = rows.slice(0, count)
 
     const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" })
     const pageWidth = doc.internal.pageSize.getWidth()
+
+    // Logo left and right (maintain 677:369 aspect ratio)
+    await addLogoToPdf(doc, 8, 3, 22, 12)
+    await addLogoToPdf(doc, pageWidth - 30, 3, 22, 12)
 
     doc.setFontSize(14)
     doc.setFont("helvetica", "bold")

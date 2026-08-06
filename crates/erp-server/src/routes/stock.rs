@@ -222,7 +222,6 @@ async fn delete_movements(
     Json(body): Json<DeleteMovementsRequest>,
 ) -> ApiResult<Json<serde_json::Value>> {
     use erp_core::entities::stock_movement;
-    use sea_orm::DeleteMany;
 
     if body.ids.is_empty() {
         return Ok(Json(serde_json::json!({ "deleted": 0 })));

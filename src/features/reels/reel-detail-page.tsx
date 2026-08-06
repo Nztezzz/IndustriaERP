@@ -12,9 +12,9 @@ import {
 import { PageHeader } from "@/components/layout/page-header"
 import { RequireRole } from "@/components/layout/require-role"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
+import { ReelStatusBadge } from "@/components/ui/status-badge"
 import {
   useReel,
   useReelHistory,
@@ -26,15 +26,6 @@ import { useProducts } from "@/lib/api/hooks/use-products"
 import { useCustomers } from "@/lib/api/hooks/use-customers"
 import { parseResponseDateTime } from "@/lib/api/datetime"
 import { ReelActionDialog } from "@/features/reels/reel-action-dialog"
-import type { ReelStatus } from "@/lib/constants"
-
-const STATUS_VARIANT: Record<ReelStatus, "outline" | "secondary" | "default" | "destructive"> = {
-  in_stock: "outline",
-  dispatched: "default",
-  returned: "secondary",
-  lost: "destructive",
-  damaged: "destructive",
-}
 
 const EVENT_META: Record<string, { icon: LucideIcon; label: string; className: string }> = {
   created: { icon: Disc3, label: "Registered", className: "bg-muted text-muted-foreground" },
@@ -146,9 +137,7 @@ export function ReelDetailPage() {
               </p>
             ) : (
               <>
-                <Badge variant={STATUS_VARIANT[reel.status]} className="w-fit capitalize">
-                  {reel.status.replace("_", " ")}
-                </Badge>
+                <ReelStatusBadge status={reel.status} className="w-fit" />
                 <div className="text-sm">
                   <span className="text-muted-foreground">Product: </span>
                   {product ? `${product.name} (${product.sku})` : reel.productId}

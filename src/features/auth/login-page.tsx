@@ -3,7 +3,7 @@ import { useNavigate } from "@tanstack/react-router"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import { Loader2, Factory } from "lucide-react"
+import { Loader2 } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -77,8 +77,8 @@ export function LoginPage() {
     <div className="flex min-h-svh items-center justify-center bg-[#0A0A0A] p-4">
       <Card className="w-full max-w-sm border-0 bg-[#1C1C1E] shadow-2xl shadow-orange-950/20">
         <CardHeader className="items-center text-center">
-          <div className="mb-3 flex size-14 items-center justify-center rounded-full bg-gradient-to-br from-[#F5820D] to-[#D96A00] shadow-lg shadow-orange-600/30">
-            <Factory className="size-7 text-white" />
+          <div className="mb-3">
+            <img src="/logo.png" alt="Preyansh ERP" className="size-20 object-contain" />
           </div>
           <CardTitle className="text-xl text-white">{APP_NAME}</CardTitle>
           <CardDescription className="text-[#A8A39D]">Sign in to your account to continue</CardDescription>

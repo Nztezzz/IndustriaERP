@@ -57,7 +57,11 @@ export function DashboardPage() {
       />
 
       <div className="flex flex-col gap-6 p-6">
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+        {/*
+         * 3 columns (not 6) so each tile has room to breathe -- six skinny
+         * columns made the numbers hard to scan at a glance.
+         */}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <StatCard
             label="Active products"
             value={summary?.totalProducts ?? 0}
@@ -98,10 +102,18 @@ export function DashboardPage() {
             icon={Truck}
             isLoading={isSummaryLoading}
           />
+          {/*
+           * `primary` = the one card that gets the orange accent bar. Reels
+           * still out with customers is the metric this business actually
+           * runs on, so it earns the brand colour; everything else stays
+           * neutral so the orange means something.
+           */}
           <StatCard
             label="Reels pending return"
             value={summary?.pendingReelCount ?? 0}
             icon={Disc3}
+            primary
+            hint="Currently out with customers"
             isLoading={isSummaryLoading}
           />
         </div>

@@ -58,6 +58,17 @@ pub async fn start(app: AppHandle) -> anyhow::Result<()> {
         }
     }
 
+    // Seed the standard product set on a genuinely fresh install so the
+    // entry forms have something selectable out of the box. Idempotent --
+    // no-ops as soon as any product exists (see seed_service docs).
+    match erp_core::services::seed_service::ensure_default_products(&db).await {
+        Ok(0) => {}
+        Ok(count) => tracing::info!(count, "seeded default products"),
+        // A seeding failure shouldn't stop the app booting -- the user can
+        // still add products by hand -- so log it and carry on.
+        Err(err) => tracing::error!(error = %err, "failed to seed default products"),
+    }
+
     let backup_dir = data_dir.join("backups");
     let state = AppState::new(db, jwt, db_path, backup_dir);
 

@@ -17,6 +17,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { EmptyState } from "@/components/layout/empty-state"
 import { useCustomers } from "@/lib/api/hooks/use-customers"
 import { CustomerFormDialog } from "@/features/customers/customer-form-dialog"
 import type { CustomerDto } from "@/lib/api/types"
@@ -78,12 +79,19 @@ export function CustomerListPage() {
                 ))}
               </div>
             ) : !customers || customers.length === 0 ? (
-              <div className="flex flex-col items-center gap-2 py-16 text-center text-muted-foreground">
-                <Building2 className="size-8" />
-                <p className="text-sm">
-                  No customers yet. Create one to get started.
-                </p>
-              </div>
+              <EmptyState
+                icon={Building2}
+                title="No customers yet"
+                description="Add your first customer to start recording dispatches and reel movements against them."
+                action={
+                  <RequireRole minRole="operator" fallback={null}>
+                    <Button size="sm" onClick={openCreate}>
+                      <Plus />
+                      New customer
+                    </Button>
+                  </RequireRole>
+                }
+              />
             ) : (
               <Table>
                 <TableHeader>

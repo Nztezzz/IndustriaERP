@@ -37,7 +37,11 @@
       "nsis": {
         "installMode": "currentUser",
         "installerIcon": "icons/icon.ico",
-        "displayLanguageSelector": false
+        "displayLanguageSelector": false,
+        "startMenuFolder": "Preyansh ERP"
+      },
+      "webviewInstallMode": {
+        "type": "downloadBootstrapper"
       }
     }
   }

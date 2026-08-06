@@ -3,13 +3,13 @@ use crate::extractors::CurrentUser;
 use crate::state::AppState;
 use axum::{
     extract::{Path, State},
-    routing::{get, post},
+    routing::get,
     Json, Router,
 };
 use chrono::Utc;
 use erp_core::entities::packing_slip;
 use erp_core::AppError;
-use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter, QueryOrder, Set};
+use sea_orm::{ActiveModelTrait, EntityTrait, QueryOrder, Set};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 

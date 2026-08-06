@@ -44,6 +44,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { EmptyState } from "@/components/layout/empty-state"
 import { useProducts } from "@/lib/api/hooks/use-products"
 import { useCustomers } from "@/lib/api/hooks/use-customers"
 import { useStockMovements, useDeleteMovements } from "@/lib/api/hooks/use-stock"
@@ -298,12 +299,15 @@ export function StockHistoryPage() {
             </div>
           </CardContent></Card>
         ) : allItems.length === 0 ? (
-          <Card><CardContent>
-            <div className="flex flex-col items-center gap-2 py-16 text-center text-muted-foreground">
-              <History className="size-8" />
-              <p className="text-sm">No stock movements match these filters.</p>
-            </div>
-          </CardContent></Card>
+          <Card>
+            <CardContent className="px-0">
+              <EmptyState
+                icon={History}
+                title="No movements found"
+                description="Nothing matches these filters yet. Try clearing them, or record an inward/outward entry."
+              />
+            </CardContent>
+          </Card>
         ) : (
           <>
             {/* Section 1: Latest 10 entries */}
@@ -366,11 +370,35 @@ export function StockHistoryPage() {
                     </TableHeader>
                     <TableBody>
                       {restItems.map(renderRow)}
+                      {/* Older entries sum */}
+                      <TableRow className="border-t-2 bg-muted/50 font-bold">
+                        <TableCell></TableCell>
+                        <TableCell></TableCell>
+                        <TableCell>TOTAL (Older)</TableCell>
+                        <TableCell className="tabular-nums">
+                          {restItems.reduce((s, m) => s + getSignedQuantity(m), 0) > 0 ? "+" : ""}
+                          {restItems.reduce((s, m) => s + getSignedQuantity(m), 0)}
+                        </TableCell>
+                        <TableCell></TableCell>
+                        <TableCell></TableCell>
+                        <TableCell></TableCell>
+                      </TableRow>
                     </TableBody>
                   </Table>
                 </CardContent>
               </Card>
             )}
+
+            {/* Grand Total */}
+            <Card className="border-primary/30 bg-primary/5">
+              <CardContent className="flex items-center justify-between py-3">
+                <span className="font-bold">GRAND TOTAL (All Entries)</span>
+                <span className="text-lg font-bold tabular-nums text-primary">
+                  {allItems.reduce((s, m) => s + getSignedQuantity(m), 0) > 0 ? "+" : ""}
+                  {allItems.reduce((s, m) => s + getSignedQuantity(m), 0)}
+                </span>
+              </CardContent>
+            </Card>
           </>
         )}
 

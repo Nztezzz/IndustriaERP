@@ -1,12 +1,13 @@
 import { useState } from "react"
 import { useNavigate, useSearch } from "@tanstack/react-router"
-import { ChevronLeft, ChevronRight, Disc3, Plus, X } from "lucide-react"
+import { ChevronLeft, ChevronRight, Disc3, Plus, Undo2, X } from "lucide-react"
 import { PageHeader } from "@/components/layout/page-header"
 import { RequireRole } from "@/components/layout/require-role"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
+import { ReelStatusBadge } from "@/components/ui/status-badge"
+import { EmptyState } from "@/components/layout/empty-state"
 import {
   Select,
   SelectContent,
@@ -22,28 +23,23 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { useReels } from "@/lib/api/hooks/use-reels"
+import { useReels, useReturnReel } from "@/lib/api/hooks/use-reels"
 import { useProducts } from "@/lib/api/hooks/use-products"
 import { useCustomers } from "@/lib/api/hooks/use-customers"
 import { parseResponseDateTime } from "@/lib/api/datetime"
 import { REEL_STATUSES, type ReelStatus } from "@/lib/constants"
 import { RegisterReelDialog } from "@/features/reels/register-reel-dialog"
+import { ReelActionDialog } from "@/features/reels/reel-action-dialog"
 
 const PAGE_SIZE = 25
-
-const STATUS_VARIANT: Record<ReelStatus, "outline" | "secondary" | "default" | "destructive"> = {
-  in_stock: "outline",
-  dispatched: "default",
-  returned: "secondary",
-  lost: "destructive",
-  damaged: "destructive",
-}
 
 export function ReelListPage() {
   const navigate = useNavigate()
   const search = useSearch({ from: "/_authenticated/reels/" })
   const [page, setPage] = useState(0)
   const [formOpen, setFormOpen] = useState(false)
+  const [returnReelNumber, setReturnReelNumber] = useState<string | null>(null)
+  const returnReel = useReturnReel()
 
   const { data, isLoading } = useReels({
     status: search.status,
@@ -151,6 +147,31 @@ export function ReelListPage() {
               Clear filters
             </Button>
           )}
+
+          {/* Quick-filter preset buttons */}
+          <div className="ml-auto flex items-center gap-1 rounded-md border p-0.5">
+            <Button
+              variant={search.status === "dispatched" ? "secondary" : "ghost"}
+              size="sm"
+              onClick={() => updateFilter({ status: "dispatched" })}
+            >
+              Dispatched
+            </Button>
+            <Button
+              variant={search.status === "returned" ? "secondary" : "ghost"}
+              size="sm"
+              onClick={() => updateFilter({ status: "returned" })}
+            >
+              Returned
+            </Button>
+            <Button
+              variant={!search.status ? "secondary" : "ghost"}
+              size="sm"
+              onClick={clearFilters}
+            >
+              All
+            </Button>
+          </div>
         </div>
 
         <Card>
@@ -162,14 +183,15 @@ export function ReelListPage() {
                 ))}
               </div>
             ) : !data || data.items.length === 0 ? (
-              <div className="flex flex-col items-center gap-2 py-16 text-center text-muted-foreground">
-                <Disc3 className="size-8" />
-                <p className="text-sm">
-                  {hasFilters
-                    ? "No reels match these filters."
-                    : "No reels registered yet."}
-                </p>
-              </div>
+              <EmptyState
+                icon={Disc3}
+                title={hasFilters ? "No matching reels" : "No reels yet"}
+                description={
+                  hasFilters
+                    ? "Try clearing or widening your filters to see more results."
+                    : "Register your first reel to start tracking where it goes."
+                }
+              />
             ) : (
               <Table>
                 <TableHeader>
@@ -180,6 +202,7 @@ export function ReelListPage() {
                     <TableHead>Current holder</TableHead>
                     <TableHead>Weight</TableHead>
                     <TableHead>Last updated</TableHead>
+                    <TableHead className="w-24">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -204,9 +227,7 @@ export function ReelListPage() {
                           {product ? `${product.name} (${product.sku})` : reel.productId}
                         </TableCell>
                         <TableCell>
-                          <Badge variant={STATUS_VARIANT[reel.status]} className="capitalize">
-                            {reel.status.replace("_", " ")}
-                          </Badge>
+                          <ReelStatusBadge status={reel.status} />
                         </TableCell>
                         <TableCell className="text-muted-foreground">
                           {customer?.name ?? "—"}
@@ -216,6 +237,18 @@ export function ReelListPage() {
                         </TableCell>
                         <TableCell className="text-muted-foreground">
                           {parseResponseDateTime(reel.updatedAt).toLocaleString()}
+                        </TableCell>
+                        <TableCell onClick={(e) => e.stopPropagation()}>
+                          {reel.status === "dispatched" && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setReturnReelNumber(reel.reelNumber)}
+                            >
+                              <Undo2 className="size-3.5" />
+                              Return
+                            </Button>
+                          )}
                         </TableCell>
                       </TableRow>
                     )
@@ -256,6 +289,24 @@ export function ReelListPage() {
       </div>
 
       <RegisterReelDialog open={formOpen} onOpenChange={setFormOpen} />
+
+      <ReelActionDialog
+        open={!!returnReelNumber}
+        onOpenChange={(open) => !open && setReturnReelNumber(null)}
+        title="Return reel"
+        description={`Mark reel #${returnReelNumber} as returned by its current holder.`}
+        remarksRequired={false}
+        confirmLabel="Confirm return"
+        isPending={returnReel.isPending}
+        onConfirm={(remarks) => {
+          if (returnReelNumber) {
+            returnReel.mutate(
+              { reelNumber: returnReelNumber, remarks: remarks.trim() || null },
+              { onSuccess: () => setReturnReelNumber(null) }
+            )
+          }
+        }}
+      />
     </>
   )
 }

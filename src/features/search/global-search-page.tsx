@@ -2,6 +2,7 @@ import { useState } from "react"
 import { useNavigate } from "@tanstack/react-router"
 import { jsPDF } from "jspdf"
 import { autoTable } from "jspdf-autotable"
+import { addLogoToPdf } from "@/lib/logo-data"
 import {
   Building2,
   Disc3,
@@ -18,6 +19,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
+import { ReelStatusBadge } from "@/components/ui/status-badge"
 import {
   Select,
   SelectContent,
@@ -45,18 +47,7 @@ import type {
   ProductSearchHit,
   ReelSearchHit,
 } from "@/lib/api/types"
-import type { ReelStatus } from "@/lib/constants"
 
-const REEL_STATUS_VARIANT: Record<
-  ReelStatus,
-  "outline" | "secondary" | "default" | "destructive"
-> = {
-  in_stock: "outline",
-  dispatched: "default",
-  returned: "secondary",
-  lost: "destructive",
-  damaged: "destructive",
-}
 
 function ResultSection<T>({
   title,
@@ -185,9 +176,13 @@ function RecentEntriesSection() {
     totals[key] = (totals[key] ?? 0) + qty
   }
 
-  function handlePrint() {
+  async function handlePrint() {
     const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" })
     const pageWidth = doc.internal.pageSize.getWidth()
+
+    // Logo (maintain 677:369 aspect ratio)
+    await addLogoToPdf(doc, 8, 3, 22, 12)
+    await addLogoToPdf(doc, pageWidth - 30, 3, 22, 12)
 
     // Header
     doc.setFontSize(14)
@@ -511,12 +506,10 @@ export function GlobalSearchPage() {
                     }
                     primary={`Reel #${hit.reelNumber}`}
                     trailing={
-                      <Badge
-                        variant={REEL_STATUS_VARIANT[hit.status]}
-                        className="shrink-0 capitalize"
-                      >
-                        {hit.status.replace("_", " ")}
-                      </Badge>
+                      <ReelStatusBadge
+                        status={hit.status}
+                        className="shrink-0"
+                      />
                     }
                   />
                 )}

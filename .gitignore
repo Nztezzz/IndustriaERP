@@ -34,6 +34,11 @@ src/routeTree.gen.ts
 # Built exe (use `npm run tauri build` to regenerate)
 Preyansh ERP.exe
 
+# Shareable installer output. The README.txt in there IS tracked (it's the
+# guide we hand to recipients), but the multi-MB installer binary is a build
+# artifact -- regenerate it with Build-Installer.bat.
+Installer/*.exe
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
