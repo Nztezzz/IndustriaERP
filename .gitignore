@@ -39,6 +39,10 @@ Preyansh ERP.exe
 # artifact -- regenerate it with Build-Installer.bat.
 Installer/*.exe
 
+# Zipped distribution bundles created for sending to people. Regenerable
+# from Build-Installer.bat + the Installer folder, so never commit them.
+*.zip
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
