@@ -35,8 +35,8 @@ export function DispatchListPage() {
   return (
     <>
       <PageHeader
-        title="Dispatches"
-        description="Dispatch entries with invoice, vehicle, and driver details."
+        title="Dispatches / Outward"
+        description="Records stock going out to customers. Creating a dispatch automatically deducts the stock, so there's no separate outward entry."
         actions={
           <RequireRole minRole="operator" fallback={null}>
             <Button size="sm" onClick={() => setFormOpen(true)}>

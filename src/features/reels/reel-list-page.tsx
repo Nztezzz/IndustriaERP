@@ -1,6 +1,14 @@
 import { useState } from "react"
 import { useNavigate, useSearch } from "@tanstack/react-router"
-import { ChevronLeft, ChevronRight, Disc3, Plus, Undo2, X } from "lucide-react"
+import {
+  ChevronLeft,
+  ChevronRight,
+  Disc3,
+  Pencil,
+  Plus,
+  Undo2,
+  X,
+} from "lucide-react"
 import { PageHeader } from "@/components/layout/page-header"
 import { RequireRole } from "@/components/layout/require-role"
 import { Button } from "@/components/ui/button"
@@ -30,6 +38,8 @@ import { parseResponseDateTime } from "@/lib/api/datetime"
 import { REEL_STATUSES, type ReelStatus } from "@/lib/constants"
 import { RegisterReelDialog } from "@/features/reels/register-reel-dialog"
 import { ReelActionDialog } from "@/features/reels/reel-action-dialog"
+import { ReelStatusDialog } from "@/features/reels/reel-status-dialog"
+import type { ReelDto } from "@/lib/api/types"
 
 const PAGE_SIZE = 25
 
@@ -39,6 +49,7 @@ export function ReelListPage() {
   const [page, setPage] = useState(0)
   const [formOpen, setFormOpen] = useState(false)
   const [returnReelNumber, setReturnReelNumber] = useState<string | null>(null)
+  const [statusTarget, setStatusTarget] = useState<ReelDto | null>(null)
   const returnReel = useReturnReel()
 
   const { data, isLoading } = useReels({
@@ -239,16 +250,30 @@ export function ReelListPage() {
                           {parseResponseDateTime(reel.updatedAt).toLocaleString()}
                         </TableCell>
                         <TableCell onClick={(e) => e.stopPropagation()}>
-                          {reel.status === "dispatched" && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => setReturnReelNumber(reel.reelNumber)}
-                            >
-                              <Undo2 className="size-3.5" />
-                              Return
-                            </Button>
-                          )}
+                          <RequireRole minRole="operator" fallback={null}>
+                            <div className="flex items-center gap-1">
+                              {/* Quick path for the most common action. */}
+                              {reel.status === "dispatched" && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => setReturnReelNumber(reel.reelNumber)}
+                                >
+                                  <Undo2 className="size-3.5" />
+                                  Return
+                                </Button>
+                              )}
+                              {/* Full status editor for everything else. */}
+                              <Button
+                                variant="ghost"
+                                size="icon-sm"
+                                title="Change status"
+                                onClick={() => setStatusTarget(reel)}
+                              >
+                                <Pencil className="size-3.5" />
+                              </Button>
+                            </div>
+                          </RequireRole>
                         </TableCell>
                       </TableRow>
                     )
@@ -289,6 +314,13 @@ export function ReelListPage() {
       </div>
 
       <RegisterReelDialog open={formOpen} onOpenChange={setFormOpen} />
+
+      <ReelStatusDialog
+        open={!!statusTarget}
+        onOpenChange={(open) => !open && setStatusTarget(null)}
+        reelNumber={statusTarget?.reelNumber ?? null}
+        currentStatus={statusTarget?.status ?? null}
+      />
 
       <ReelActionDialog
         open={!!returnReelNumber}

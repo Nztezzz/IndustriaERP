@@ -4,6 +4,7 @@ import {
   AlertTriangle,
   ArrowLeft,
   Disc3,
+  Pencil,
   ShieldAlert,
   Truck,
   Undo2,
@@ -15,17 +16,12 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ReelStatusBadge } from "@/components/ui/status-badge"
-import {
-  useReel,
-  useReelHistory,
-  useReturnReel,
-  useMarkReelLost,
-  useMarkReelDamaged,
-} from "@/lib/api/hooks/use-reels"
+import { useReel, useReelHistory, useReturnReel } from "@/lib/api/hooks/use-reels"
 import { useProducts } from "@/lib/api/hooks/use-products"
 import { useCustomers } from "@/lib/api/hooks/use-customers"
 import { parseResponseDateTime } from "@/lib/api/datetime"
 import { ReelActionDialog } from "@/features/reels/reel-action-dialog"
+import { ReelStatusDialog } from "@/features/reels/reel-status-dialog"
 
 const EVENT_META: Record<string, { icon: LucideIcon; label: string; className: string }> = {
   created: { icon: Disc3, label: "Registered", className: "bg-muted text-muted-foreground" },
@@ -34,8 +30,6 @@ const EVENT_META: Record<string, { icon: LucideIcon; label: string; className: s
   lost: { icon: AlertTriangle, label: "Lost", className: "bg-destructive/10 text-destructive" },
   damaged: { icon: ShieldAlert, label: "Damaged", className: "bg-destructive/10 text-destructive" },
 }
-
-type ActionKind = "return" | "lost" | "damaged" | null
 
 export function ReelDetailPage() {
   const navigate = useNavigate()
@@ -48,10 +42,9 @@ export function ReelDetailPage() {
   const { data: customers } = useCustomers()
 
   const returnReel = useReturnReel()
-  const markLost = useMarkReelLost()
-  const markDamaged = useMarkReelDamaged()
 
-  const [activeAction, setActiveAction] = useState<ActionKind>(null)
+  const [isReturning, setIsReturning] = useState(false)
+  const [statusDialogOpen, setStatusDialogOpen] = useState(false)
 
   const product = products?.find((p) => p.id === reel?.productId)
   const customer = customers?.find((c) => c.id === reel?.currentCustomerId)
@@ -63,18 +56,14 @@ export function ReelDetailPage() {
   const canReturn = reel?.status === "dispatched"
   const canMarkLostOrDamaged = reel && reel.status !== "lost" && reel.status !== "damaged"
 
-  function handleConfirm(remarks: string) {
+  // Lost/damaged now go through ReelStatusDialog, so this only handles the
+  // one dedicated quick action left on this page.
+  function handleReturnConfirm(remarks: string) {
     if (!reelNumber) return
-    if (activeAction === "return") {
-      returnReel.mutate(
-        { reelNumber, remarks: remarks.trim() ? remarks : null },
-        { onSuccess: () => setActiveAction(null) }
-      )
-    } else if (activeAction === "lost") {
-      markLost.mutate({ reelNumber, remarks }, { onSuccess: () => setActiveAction(null) })
-    } else if (activeAction === "damaged") {
-      markDamaged.mutate({ reelNumber, remarks }, { onSuccess: () => setActiveAction(null) })
-    }
+    returnReel.mutate(
+      { reelNumber, remarks: remarks.trim() ? remarks : null },
+      { onSuccess: () => setIsReturning(false) }
+    )
   }
 
   return (
@@ -89,31 +78,27 @@ export function ReelDetailPage() {
               Back to reels
             </Button>
             <RequireRole minRole="operator" fallback={null}>
+              {/* Returning is the common case, so it keeps its own button. */}
               {reel && canReturn && (
-                <Button size="sm" onClick={() => setActiveAction("return")}>
+                <Button size="sm" onClick={() => setIsReturning(true)}>
                   <Undo2 />
                   Return
                 </Button>
               )}
+              {/*
+               * Everything else goes through the shared status editor rather
+               * than a row of one-off buttons -- same dialog the list page
+               * uses, so the allowed transitions can't drift between them.
+               */}
               {reel && canMarkLostOrDamaged && (
-                <>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setActiveAction("damaged")}
-                  >
-                    <ShieldAlert />
-                    Mark damaged
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setActiveAction("lost")}
-                  >
-                    <AlertTriangle />
-                    Mark lost
-                  </Button>
-                </>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setStatusDialogOpen(true)}
+                >
+                  <Pencil />
+                  Change status
+                </Button>
               )}
             </RequireRole>
           </div>
@@ -224,36 +209,20 @@ export function ReelDetailPage() {
       </div>
 
       <ReelActionDialog
-        open={activeAction === "return"}
-        onOpenChange={(open) => !open && setActiveAction(null)}
+        open={isReturning}
+        onOpenChange={setIsReturning}
         title="Return reel"
         description="Marks this reel as returned by its current holder."
         remarksRequired={false}
         confirmLabel="Confirm return"
         isPending={returnReel.isPending}
-        onConfirm={handleConfirm}
+        onConfirm={handleReturnConfirm}
       />
-      <ReelActionDialog
-        open={activeAction === "lost"}
-        onOpenChange={(open) => !open && setActiveAction(null)}
-        title="Mark reel lost"
-        description="This cannot be undone. A reason is required for the audit trail."
-        remarksRequired
-        confirmLabel="Mark lost"
-        confirmVariant="destructive"
-        isPending={markLost.isPending}
-        onConfirm={handleConfirm}
-      />
-      <ReelActionDialog
-        open={activeAction === "damaged"}
-        onOpenChange={(open) => !open && setActiveAction(null)}
-        title="Mark reel damaged"
-        description="This cannot be undone. A reason is required for the audit trail."
-        remarksRequired
-        confirmLabel="Mark damaged"
-        confirmVariant="destructive"
-        isPending={markDamaged.isPending}
-        onConfirm={handleConfirm}
+      <ReelStatusDialog
+        open={statusDialogOpen}
+        onOpenChange={setStatusDialogOpen}
+        reelNumber={reel?.reelNumber ?? null}
+        currentStatus={reel?.status ?? null}
       />
     </>
   )

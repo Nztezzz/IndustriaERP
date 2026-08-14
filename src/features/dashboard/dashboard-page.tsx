@@ -149,21 +149,20 @@ export function DashboardPage() {
                   <ArrowDownToLine />
                   Record inward stock
                 </Button>
-                <Button
-                  variant="outline"
-                  className="justify-start"
-                  onClick={() => navigate({ to: "/inventory/outward" })}
-                >
-                  <ArrowUpFromLine />
-                  Record outward stock
-                </Button>
+                {/*
+                 * Stock going OUT to a customer is recorded by creating a
+                 * Dispatch -- dispatch_service already writes the outward
+                 * stock movement for every line item. There's deliberately
+                 * no separate "record outward" shortcut, since doing both
+                 * for one shipment would deduct the stock twice.
+                 */}
                 <Button
                   variant="outline"
                   className="justify-start"
                   onClick={() => navigate({ to: "/dispatches" })}
                 >
                   <Truck />
-                  New dispatch
+                  Record outward / new dispatch
                 </Button>
               </RequireRole>
               <Button

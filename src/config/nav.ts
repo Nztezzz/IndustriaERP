@@ -2,7 +2,6 @@ import type { LucideIcon } from "lucide-react"
 import {
   LayoutDashboard,
   ArrowDownToLine,
-  ArrowUpFromLine,
   SlidersHorizontal,
   History,
   Package,
@@ -45,12 +44,6 @@ export const NAV_GROUPS: NavGroup[] = [
         title: "Inward Entry",
         url: "/inventory/inward",
         icon: ArrowDownToLine,
-        minRole: "operator",
-      },
-      {
-        title: "Outward Entry",
-        url: "/inventory/outward",
-        icon: ArrowUpFromLine,
         minRole: "operator",
       },
       {
