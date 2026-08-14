@@ -69,7 +69,10 @@ function getSignedQuantity(m: StockMovementDto): number {
 export function StockHistoryPage() {
   const navigate = useNavigate()
   const search = useSearch({ from: "/_authenticated/inventory/history" })
-  const { data: products } = useProducts()
+  // Include inactive products: history rows can reference a product that was
+  // since deactivated, and an active-only lookup made those cells print the
+  // raw product UUID.
+  const { data: products } = useProducts(true)
   const { data: customers } = useCustomers()
   const [page, setPage] = useState(0)
   const [selected, setSelected] = useState<Set<string>>(new Set())
@@ -181,18 +184,29 @@ export function StockHistoryPage() {
             <span className="capitalize">{movement.movementType}</span>
           </div>
         </TableCell>
-        <TableCell>{product ? product.name : movement.productId}</TableCell>
+        <TableCell className="max-w-[11rem] truncate" title={product?.name}>
+          {product ? product.name : "Unknown product"}
+        </TableCell>
         <TableCell className="tabular-nums">
           {signedQuantity > 0 ? "+" : ""}{signedQuantity}
         </TableCell>
-        <TableCell className="text-muted-foreground">{movement.referenceNumber ?? "\u2014"}</TableCell>
-        <TableCell className="text-muted-foreground">
+        <TableCell className="hidden max-w-[10rem] truncate text-muted-foreground lg:table-cell">
+          {movement.referenceNumber ?? "\u2014"}
+        </TableCell>
+        <TableCell
+          className="hidden text-muted-foreground xl:table-cell"
+          title={movement.remarks ?? undefined}
+        >
           {movement.remarks
             ? movement.remarks.length > 20 ? `${movement.remarks.slice(0, 20)}\u2026` : movement.remarks
             : "\u2014"}
         </TableCell>
-        <TableCell className="text-muted-foreground">
-          {parseResponseDateTime(movement.createdAt).toLocaleString()}
+        <TableCell
+          className="text-muted-foreground"
+          title={parseResponseDateTime(movement.createdAt).toLocaleString()}
+        >
+          {/* Date only; full timestamp in the tooltip. */}
+          {parseResponseDateTime(movement.createdAt).toLocaleDateString()}
         </TableCell>
       </TableRow>
     )
@@ -325,8 +339,8 @@ export function StockHistoryPage() {
                       <TableHead>Type</TableHead>
                       <TableHead>Product</TableHead>
                       <TableHead>Quantity</TableHead>
-                      <TableHead>Reference</TableHead>
-                      <TableHead>Remarks</TableHead>
+                      <TableHead className="hidden lg:table-cell">Reference</TableHead>
+                      <TableHead className="hidden xl:table-cell">Remarks</TableHead>
                       <TableHead>When</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -340,9 +354,10 @@ export function StockHistoryPage() {
                       <TableCell className="tabular-nums text-primary">
                         {latest10Sum > 0 ? "+" : ""}{latest10Sum}
                       </TableCell>
-                      <TableCell></TableCell>
-                      <TableCell></TableCell>
-                      <TableCell></TableCell>
+                      {/* Mirror the responsive columns so cells stay aligned. */}
+                      <TableCell className="hidden lg:table-cell" />
+                      <TableCell className="hidden xl:table-cell" />
+                      <TableCell />
                     </TableRow>
                   </TableBody>
                 </Table>
@@ -363,8 +378,8 @@ export function StockHistoryPage() {
                         <TableHead>Type</TableHead>
                         <TableHead>Product</TableHead>
                         <TableHead>Quantity</TableHead>
-                        <TableHead>Reference</TableHead>
-                        <TableHead>Remarks</TableHead>
+                        <TableHead className="hidden lg:table-cell">Reference</TableHead>
+                        <TableHead className="hidden xl:table-cell">Remarks</TableHead>
                         <TableHead>When</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -379,9 +394,10 @@ export function StockHistoryPage() {
                           {restItems.reduce((s, m) => s + getSignedQuantity(m), 0) > 0 ? "+" : ""}
                           {restItems.reduce((s, m) => s + getSignedQuantity(m), 0)}
                         </TableCell>
-                        <TableCell></TableCell>
-                        <TableCell></TableCell>
-                        <TableCell></TableCell>
+                        {/* Mirror the responsive columns so cells stay aligned. */}
+                        <TableCell className="hidden lg:table-cell" />
+                        <TableCell className="hidden xl:table-cell" />
+                        <TableCell />
                       </TableRow>
                     </TableBody>
                   </Table>

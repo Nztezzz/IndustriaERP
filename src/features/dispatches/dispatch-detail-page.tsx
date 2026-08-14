@@ -30,7 +30,7 @@ export function DispatchDetailPage() {
     from: "/_authenticated/dispatches/$dispatchId",
   })
   const { data: dispatch, isLoading } = useDispatch(dispatchId)
-  const { data: products } = useProducts()
+  const { data: products } = useProducts(true)
 
   return (
     <>

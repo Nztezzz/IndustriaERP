@@ -38,7 +38,7 @@ export function ReelDetailPage() {
   })
   const { data: reel, isLoading } = useReel(reelNumber)
   const { data: history, isLoading: isHistoryLoading } = useReelHistory(reelNumber)
-  const { data: products } = useProducts()
+  const { data: products } = useProducts(true)
   const { data: customers } = useCustomers()
 
   const returnReel = useReturnReel()
@@ -125,7 +125,7 @@ export function ReelDetailPage() {
                 <ReelStatusBadge status={reel.status} className="w-fit" />
                 <div className="text-sm">
                   <span className="text-muted-foreground">Product: </span>
-                  {product ? `${product.name} (${product.sku})` : reel.productId}
+                  {product ? `${product.name} (${product.sku})` : "Unknown product"}
                 </div>
                 {reel.weightKg && (
                   <div className="text-sm">

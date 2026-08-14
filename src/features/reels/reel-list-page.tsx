@@ -59,8 +59,15 @@ export function ReelListPage() {
     page,
     pageSize: PAGE_SIZE,
   })
-  const { data: products } = useProducts()
+  // Include INACTIVE products here on purpose. Reels can reference a product
+  // that was later deactivated; with an active-only list the lookup missed and
+  // the table printed the raw product UUID instead of a name (which also blew
+  // the column width out and forced horizontal scrolling).
+  const { data: allProducts } = useProducts(true)
   const { data: customers } = useCustomers()
+
+  // The filter dropdown should still only offer products you'd currently pick.
+  const activeProducts = allProducts?.filter((p) => p.isActive)
 
   const totalPages = data ? Math.max(1, Math.ceil(data.total / PAGE_SIZE)) : 1
   const hasFilters = !!(search.status || search.customerId || search.productId)
@@ -120,14 +127,14 @@ export function ReelListPage() {
               updateFilter({ productId: value === "all" ? undefined : value })
             }
           >
-            <SelectTrigger className="w-56">
+            <SelectTrigger className="w-44">
               <SelectValue placeholder="All products" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All products</SelectItem>
-              {products?.map((product) => (
+              {activeProducts?.map((product) => (
                 <SelectItem key={product.id} value={product.id}>
-                  {product.name} ({product.sku})
+                  {product.name}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -159,8 +166,12 @@ export function ReelListPage() {
             </Button>
           )}
 
-          {/* Quick-filter preset buttons */}
-          <div className="ml-auto flex items-center gap-1 rounded-md border p-0.5">
+          {/*
+           * No `ml-auto` -- pushing this group to the far right fought the
+           * flex-wrap and forced the filter row wider than the viewport.
+           * Letting it sit inline means it wraps naturally instead.
+           */}
+          <div className="flex items-center gap-1 rounded-md border p-0.5">
             <Button
               variant={search.status === "dispatched" ? "secondary" : "ghost"}
               size="sm"
@@ -206,19 +217,25 @@ export function ReelListPage() {
             ) : (
               <Table>
                 <TableHeader>
+                  {/*
+                   * Weight and Last updated are the least load-bearing columns,
+                   * so they drop out on narrower windows rather than pushing the
+                   * table into horizontal scroll. Everything is still on the
+                   * detail page.
+                   */}
                   <TableRow>
                     <TableHead>Reel number</TableHead>
                     <TableHead>Product</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead>Current holder</TableHead>
-                    <TableHead>Weight</TableHead>
-                    <TableHead>Last updated</TableHead>
-                    <TableHead className="w-24">Actions</TableHead>
+                    <TableHead>Holder</TableHead>
+                    <TableHead className="hidden lg:table-cell">Weight</TableHead>
+                    <TableHead className="hidden xl:table-cell">Updated</TableHead>
+                    <TableHead className="w-px text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {data.items.map((reel) => {
-                    const product = products?.find((p) => p.id === reel.productId)
+                    const product = allProducts?.find((p) => p.id === reel.productId)
                     const customer = customers?.find(
                       (c) => c.id === reel.currentCustomerId
                     )
@@ -233,23 +250,56 @@ export function ReelListPage() {
                           })
                         }
                       >
-                        <TableCell className="font-medium">{reel.reelNumber}</TableCell>
-                        <TableCell>
-                          {product ? `${product.name} (${product.sku})` : reel.productId}
+                        <TableCell
+                          className="max-w-[11rem] truncate font-medium"
+                          title={reel.reelNumber}
+                        >
+                          {reel.reelNumber}
+                        </TableCell>
+                        <TableCell
+                          className="max-w-[11rem] truncate"
+                          title={product?.name ?? reel.productId}
+                        >
+                          {/* Show the name; only ever fall back to an id if the
+                              product row is genuinely missing. */}
+                          {product ? (
+                            <span>
+                              {product.name}
+                              {!product.isActive && (
+                                <span className="ml-1 text-xs text-muted-foreground">
+                                  (inactive)
+                                </span>
+                              )}
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground">Unknown product</span>
+                          )}
                         </TableCell>
                         <TableCell>
                           <ReelStatusBadge status={reel.status} />
                         </TableCell>
-                        <TableCell className="text-muted-foreground">
+                        <TableCell
+                          className="max-w-[10rem] truncate text-muted-foreground"
+                          title={customer?.name ?? undefined}
+                        >
                           {customer?.name ?? "—"}
                         </TableCell>
-                        <TableCell className="tabular-nums text-muted-foreground">
+                        <TableCell className="hidden tabular-nums text-muted-foreground lg:table-cell">
                           {reel.weightKg ? `${reel.weightKg} kg` : "—"}
                         </TableCell>
-                        <TableCell className="text-muted-foreground">
-                          {parseResponseDateTime(reel.updatedAt).toLocaleString()}
+                        <TableCell
+                          className="hidden text-muted-foreground xl:table-cell"
+                          title={parseResponseDateTime(reel.updatedAt).toLocaleString()}
+                        >
+                          {/* Date only -- the full timestamp is in the tooltip and
+                              on the detail page. A full toLocaleString() here was
+                              one of the widest cells in the table. */}
+                          {parseResponseDateTime(reel.updatedAt).toLocaleDateString()}
                         </TableCell>
-                        <TableCell onClick={(e) => e.stopPropagation()}>
+                        <TableCell
+                          className="text-right"
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           <RequireRole minRole="operator" fallback={null}>
                             <div className="flex items-center gap-1">
                               {/* Quick path for the most common action. */}

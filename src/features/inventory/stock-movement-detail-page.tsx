@@ -38,7 +38,7 @@ export function StockMovementDetailPage() {
     from: "/_authenticated/inventory/movement/$movementId",
   })
   const { data: movement, isLoading } = useStockMovement(movementId)
-  const { data: products } = useProducts()
+  const { data: products } = useProducts(true)
 
   const product = products?.find((p) => p.id === movement?.productId)
   const meta = movement ? MOVEMENT_META[movement.movementType] : null
@@ -104,7 +104,7 @@ export function StockMovementDetailPage() {
                   value={
                     product
                       ? `${product.name} (${product.sku})`
-                      : movement.productId
+                      : "Unknown product"
                   }
                 />
 

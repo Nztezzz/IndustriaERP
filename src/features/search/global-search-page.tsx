@@ -121,7 +121,7 @@ function HitRow({
 
 /** Party ledger view matching the reference spreadsheet format */
 function RecentEntriesSection() {
-  const { data: products } = useProducts()
+  const { data: products } = useProducts(true)
   const { data: allCustomers } = useCustomers()
   const [filterCustomer, setFilterCustomer] = useState<string>("")
   const [filterProduct, setFilterProduct] = useState<string>("")

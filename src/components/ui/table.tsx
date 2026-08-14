@@ -21,12 +21,12 @@ function TableHeader({ className, ...props }: React.ComponentProps<"thead">) {
   return (
     <thead
       data-slot="table-header"
-      // Sticky so column labels stay visible while scrolling long ledgers.
-      // `bg-card` (not transparent) so rows don't bleed through underneath.
-      className={cn(
-        "sticky top-0 z-10 bg-card [&_tr]:border-b [&_tr]:border-border",
-        className
-      )}
+      // NOT sticky: the wrapping `table-container` sets `overflow-x-auto`,
+      // which per spec makes overflow-y compute to `auto` too. That turns it
+      // into its own scroll container, so `sticky top-0` never sticks to the
+      // page -- it only produced a misaligned header band during horizontal
+      // scroll. Header styling stays; the positioning is gone.
+      className={cn("[&_tr]:border-b [&_tr]:border-border", className)}
       {...props}
     />
   )
