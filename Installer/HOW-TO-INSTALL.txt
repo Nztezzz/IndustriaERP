@@ -1,0 +1,83 @@
+========================================
+  PREYANSH ERP - QUICK INSTALL
+========================================
+
+You received a ZIP file. Here is what to do.
+
+STEP 1 - EXTRACT
+----------------
+Right-click the ZIP file  ->  "Extract All..."  ->  Extract
+(Do NOT run the installer from inside the ZIP - extract it first.)
+
+
+STEP 2 - INSTALL
+----------------
+Open the extracted folder and double-click:
+
+   Preyansh-ERP-Setup-v0.1.0.exe
+
+If Windows shows a blue "Windows protected your PC" box:
+   1. Click "More info"
+   2. Click "Run anyway"
+
+This warning is normal. It appears because the installer does not
+have a paid certificate. The app is safe.
+
+Installation takes about 10 seconds. It does NOT ask for an
+administrator password.
+
+
+STEP 3 - FIRST LAUNCH  ** IMPORTANT **
+--------------------------------------
+The app opens automatically and shows a pop-up with your
+username and password.
+
+   >>>  WRITE THEM DOWN NOW. <<<
+
+They are shown only ONCE. There is no way to recover them
+afterwards, and there is no "forgot password" option.
+
+Your username will be:  admin
+Your password will be:  a random 12-character code shown in
+                        that pop-up (different on every computer)
+
+There is a "Copy" button in the pop-up - use it and paste the
+password somewhere safe before clicking Continue.
+
+You can change both later under:  Settings -> Profile
+
+
+OPENING IT AGAIN LATER
+----------------------
+Find "Preyansh ERP" in your Start Menu, or use the Desktop
+shortcut. You do not need the installer or the ZIP again.
+
+
+WHAT IS ALREADY SET UP
+----------------------
+These products are ready to use:
+   Plastic Reel, 300 mm Spool, 500 mm Spool,
+   630 mm Spool, 800 mm Spool
+
+You need to add your own customers before recording
+inward/outward entries:
+   Customers -> New customer
+
+
+NEEDS
+-----
+   Windows 10 or 11, 64-bit
+   About 150 MB free space
+   No internet needed to use the app
+
+
+BACKUPS - PLEASE DO THIS REGULARLY
+----------------------------------
+   Settings -> Backup & Restore -> Create backup
+
+Then copy the backup file to a USB drive or Google Drive.
+If you lose your password or your PC fails, a backup is the
+only way to get your records back.
+
+
+For full details see README.txt in the same folder.
