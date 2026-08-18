@@ -19,7 +19,7 @@ import {
 import { useDispatches } from "@/lib/api/hooks/use-dispatches"
 import { useCustomers } from "@/lib/api/hooks/use-customers"
 import { parseResponseDateTime } from "@/lib/api/datetime"
-import { DispatchFormSheet } from "@/features/dispatches/dispatch-form-sheet"
+import { DispatchFormDialog } from "@/features/dispatches/dispatch-form-dialog"
 
 const PAGE_SIZE = 25
 
@@ -146,7 +146,7 @@ export function DispatchListPage() {
         )}
       </div>
 
-      <DispatchFormSheet open={formOpen} onOpenChange={setFormOpen} />
+      <DispatchFormDialog open={formOpen} onOpenChange={setFormOpen} />
     </>
   )
 }
