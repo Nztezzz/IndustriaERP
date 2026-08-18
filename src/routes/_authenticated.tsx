@@ -52,7 +52,7 @@ function AuthenticatedLayout() {
          * which re-triggers the short `page-enter` fade+rise. Cheap way to
          * get page transitions without a route-level animation library.
          */}
-        <div key={pathname} className="page-enter flex flex-1 flex-col">
+        <div key={pathname} className="page-enter flex min-h-0 flex-1 flex-col overflow-auto">
           <Outlet />
         </div>
       </SidebarInset>

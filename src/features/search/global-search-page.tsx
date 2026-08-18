@@ -160,10 +160,14 @@ function RecentEntriesSection() {
   // Old data = everything beyond the displayed entries
   const oldRows = allRows.slice(entryCount)
 
-  // Build the product columns (the 5 product types)
+  // Build the product columns -- only show the 5 core products
+  // (P. Reel + the size-based spools). Filter out debug/test products
+  // so the table fits on screen without horizontal scroll.
+  const CORE_PRODUCT_NAMES = ["Plastic Reel", "300 mm Spool", "500 mm Spool", "630 mm Spool", "800 mm Spool"]
+  const coreProducts = (products ?? []).filter(p => CORE_PRODUCT_NAMES.includes(p.name))
   const productColumns = products ?? []
-  const pReel = productColumns.find(p => p.name === "Plastic Reel")
-  const otherProducts = productColumns.filter(p => p.name !== "Plastic Reel")
+  const pReel = coreProducts.find(p => p.name === "Plastic Reel")
+  const otherProducts = coreProducts.filter(p => p.name !== "Plastic Reel")
 
   // Calculate totals per product
   const totals: Record<string, number> = {}
@@ -269,8 +273,8 @@ function RecentEntriesSection() {
 
   // For display
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
+    <Card className="flex flex-col overflow-hidden">
+      <CardHeader className="flex shrink-0 flex-row items-center justify-between py-3">
         <div className="flex items-center gap-2">
           <Filter className="size-4 text-muted-foreground" />
           <CardTitle className="text-sm">Party Ledger (Last {entryCount})</CardTitle>
@@ -279,8 +283,8 @@ function RecentEntriesSection() {
           <Printer /> Print
         </Button>
       </CardHeader>
-      <CardContent>
-        <div className="mb-4 flex flex-wrap items-center gap-2">
+      <CardContent className="flex min-h-0 flex-1 flex-col overflow-hidden px-4 pb-3 pt-0">
+        <div className="mb-3 flex shrink-0 flex-wrap items-center gap-2">
           <Select value={filterCustomer} onValueChange={setFilterCustomer}>
             <SelectTrigger className="w-56">
               <SelectValue placeholder="All parties" />
@@ -329,17 +333,17 @@ function RecentEntriesSection() {
         </div>
 
         {rows.length === 0 ? (
-          <p className="py-8 text-center text-sm text-muted-foreground">No entries found.</p>
+          <p className="py-6 text-center text-sm text-muted-foreground">No entries found.</p>
         ) : (
-          <div className="overflow-x-auto">
-            <Table>
+          <div className="min-h-0 flex-1 overflow-auto">
+            <Table className="table-fixed w-full">
               <TableHeader>
                 <TableRow>
-                  <TableHead>Party Name</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead className="text-center">P. Reel</TableHead>
+                  <TableHead className="w-[25%]">Party</TableHead>
+                  <TableHead className="w-[15%]">Date</TableHead>
+                  <TableHead className="w-[12%] text-center">P. Reel</TableHead>
                   {otherProducts.map((p) => (
-                    <TableHead key={p.id} className="text-center">{p.name.replace(" mm Spool", " MM")}</TableHead>
+                    <TableHead key={p.id} className="w-[12%] text-center">{p.name.replace(" mm Spool", " MM")}</TableHead>
                   ))}
                 </TableRow>
               </TableHeader>
@@ -419,14 +423,14 @@ export function GlobalSearchPage() {
     : 0
 
   return (
-    <>
+    <div className="flex h-full flex-col overflow-hidden">
       <PageHeader
         title="Search"
         description="Search across customers, products, invoices, and filter recent entries."
       />
 
-      <div className="flex flex-col gap-4 p-6">
-        <div className="relative max-w-xl">
+      <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden px-6 pb-4 pt-2">
+        <div className="relative max-w-xl shrink-0">
           <Search className="absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             autoFocus
@@ -437,77 +441,79 @@ export function GlobalSearchPage() {
           />
         </div>
 
-        {/* Filtered recent entries section - always visible */}
-        <RecentEntriesSection />
+        {/* Filtered recent entries section - always visible, takes remaining space */}
+        <div className="min-h-0 flex-1 overflow-auto">
+          <RecentEntriesSection />
 
-        {hasQuery && (
-          <>
-            {!isFetching && totalHits === 0 && (
-              <p className="text-sm text-muted-foreground">
-                No results for &quot;{debouncedQuery}&quot;.
-              </p>
-            )}
+          {hasQuery && (
+            <div className="mt-4">
+              {!isFetching && totalHits === 0 && (
+                <p className="text-sm text-muted-foreground">
+                  No results for &quot;{debouncedQuery}&quot;.
+                </p>
+              )}
 
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <ResultSection<ProductSearchHit>
-                title="Products"
-                icon={Package}
-                hits={data?.products}
-                isLoading={isFetching}
-                emptyLabel="No matching products."
-                renderHit={(hit) => (
-                  <HitRow
-                    onClick={() =>
-                      navigate({ to: "/products", search: { q: hit.sku } })
-                    }
-                    primary={hit.name}
-                    secondary={hit.sku}
-                  />
-                )}
-              />
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                <ResultSection<ProductSearchHit>
+                  title="Products"
+                  icon={Package}
+                  hits={data?.products}
+                  isLoading={isFetching}
+                  emptyLabel="No matching products."
+                  renderHit={(hit) => (
+                    <HitRow
+                      onClick={() =>
+                        navigate({ to: "/products", search: { q: hit.sku } })
+                      }
+                      primary={hit.name}
+                      secondary={hit.sku}
+                    />
+                  )}
+                />
 
-              <ResultSection<CustomerSearchHit>
-                title="Customers"
-                icon={Building2}
-                hits={data?.customers}
-                isLoading={isFetching}
-                emptyLabel="No matching customers."
-                renderHit={(hit) => (
-                  <HitRow
-                    onClick={() =>
-                      navigate({
-                        to: "/customers/$customerId",
-                        params: { customerId: hit.id },
-                      })
-                    }
-                    primary={hit.name}
-                    secondary={hit.phone ?? undefined}
-                  />
-                )}
-              />
+                <ResultSection<CustomerSearchHit>
+                  title="Customers"
+                  icon={Building2}
+                  hits={data?.customers}
+                  isLoading={isFetching}
+                  emptyLabel="No matching customers."
+                  renderHit={(hit) => (
+                    <HitRow
+                      onClick={() =>
+                        navigate({
+                          to: "/customers/$customerId",
+                          params: { customerId: hit.id },
+                        })
+                      }
+                      primary={hit.name}
+                      secondary={hit.phone ?? undefined}
+                    />
+                  )}
+                />
 
-              <ResultSection<DispatchSearchHit>
-                title="Dispatches"
-                icon={Truck}
-                hits={data?.dispatches}
-                isLoading={isFetching}
-                emptyLabel="No matching dispatches."
-                renderHit={(hit) => (
-                  <HitRow
-                    onClick={() =>
-                      navigate({
-                        to: "/dispatches/$dispatchId",
-                        params: { dispatchId: hit.id },
-                      })
-                    }
-                    primary={hit.invoiceNumber}
-                  />
-                )}
-              />
+                <ResultSection<DispatchSearchHit>
+                  title="Dispatches"
+                  icon={Truck}
+                  hits={data?.dispatches}
+                  isLoading={isFetching}
+                  emptyLabel="No matching dispatches."
+                  renderHit={(hit) => (
+                    <HitRow
+                      onClick={() =>
+                        navigate({
+                          to: "/dispatches/$dispatchId",
+                          params: { dispatchId: hit.id },
+                        })
+                      }
+                      primary={hit.invoiceNumber}
+                    />
+                  )}
+                />
+              </div>
             </div>
-          </>
-        )}
+          )}
+        </div>
       </div>
-    </>
+    </div>
   )
 }
