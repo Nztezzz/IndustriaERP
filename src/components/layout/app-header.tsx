@@ -1,7 +1,7 @@
 import { useEffect } from "react"
 import { useNavigate } from "@tanstack/react-router"
 import { useTheme } from "next-themes"
-import { LogOut, Monitor, Moon, Search, Settings, Sun, UserRound } from "lucide-react"
+import { LogOut, Monitor, Moon, Search, Settings, Sun } from "lucide-react"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { Separator } from "@/components/ui/separator"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
@@ -91,10 +91,6 @@ export function AppHeader({ children }: { children?: React.ReactNode }) {
             <DropdownMenuLabel>{user.username}</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem onSelect={() => navigate({ to: "/settings/profile" })}>
-              <UserRound />
-              Profile
-            </DropdownMenuItem>
-            <DropdownMenuItem onSelect={() => navigate({ to: "/settings/users" })}>
               <Settings />
               Settings
             </DropdownMenuItem>
