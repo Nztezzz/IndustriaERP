@@ -1,5 +1,5 @@
 import { useNavigate, useParams } from "@tanstack/react-router"
-import { ArrowLeft, Disc3, Package, User } from "lucide-react"
+import { ArrowLeft, Package, User } from "lucide-react"
 import { PageHeader } from "@/components/layout/page-header"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -154,28 +154,6 @@ export function DispatchDetailPage() {
           </CardContent>
         </Card>
 
-        {dispatch && dispatch.reelNumbers.length > 0 && (
-          <Card className="lg:col-span-3">
-            <CardHeader>
-              <CardTitle>Attached reels</CardTitle>
-            </CardHeader>
-            <CardContent className="flex flex-wrap gap-2">
-              {dispatch.reelNumbers.map((reelNumber) => (
-                <Button
-                  key={reelNumber}
-                  variant="outline"
-                  size="sm"
-                  onClick={() =>
-                    navigate({ to: "/reels/$reelNumber", params: { reelNumber } })
-                  }
-                >
-                  <Disc3 />
-                  {reelNumber}
-                </Button>
-              ))}
-            </CardContent>
-          </Card>
-        )}
       </div>
     </>
   )

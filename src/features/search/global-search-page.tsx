@@ -5,7 +5,6 @@ import { autoTable } from "jspdf-autotable"
 import { addLogoToPdf } from "@/lib/logo-data"
 import {
   Building2,
-  Disc3,
   Filter,
   Package,
   Printer,
@@ -19,7 +18,6 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
-import { ReelStatusBadge } from "@/components/ui/status-badge"
 import {
   Select,
   SelectContent,
@@ -45,7 +43,6 @@ import type {
   CustomerSearchHit,
   DispatchSearchHit,
   ProductSearchHit,
-  ReelSearchHit,
 } from "@/lib/api/types"
 
 
@@ -418,7 +415,6 @@ export function GlobalSearchPage() {
   const totalHits = data
     ? data.products.length +
       data.customers.length +
-      data.reels.length +
       data.dispatches.length
     : 0
 
@@ -426,7 +422,7 @@ export function GlobalSearchPage() {
     <>
       <PageHeader
         title="Search"
-        description="Search across customers, products, reels, invoices, and filter recent entries."
+        description="Search across customers, products, invoices, and filter recent entries."
       />
 
       <div className="flex flex-col gap-4 p-6">
@@ -434,7 +430,7 @@ export function GlobalSearchPage() {
           <Search className="absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             autoFocus
-            placeholder="Search products, customers, reel numbers, invoice numbers..."
+            placeholder="Search products, customers, invoice numbers..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             className="pl-8"
@@ -486,31 +482,6 @@ export function GlobalSearchPage() {
                     }
                     primary={hit.name}
                     secondary={hit.phone ?? undefined}
-                  />
-                )}
-              />
-
-              <ResultSection<ReelSearchHit>
-                title="Reels"
-                icon={Disc3}
-                hits={data?.reels}
-                isLoading={isFetching}
-                emptyLabel="No matching reels."
-                renderHit={(hit) => (
-                  <HitRow
-                    onClick={() =>
-                      navigate({
-                        to: "/reels/$reelNumber",
-                        params: { reelNumber: hit.reelNumber },
-                      })
-                    }
-                    primary={`Reel #${hit.reelNumber}`}
-                    trailing={
-                      <ReelStatusBadge
-                        status={hit.status}
-                        className="shrink-0"
-                      />
-                    }
                   />
                 )}
               />

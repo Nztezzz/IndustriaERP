@@ -7,7 +7,6 @@ import {
   Package,
   Users,
   Truck,
-  Disc3,
   Search,
   FileBarChart,
   FileText,
@@ -56,10 +55,9 @@ export const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
-    label: "Dispatch & Reels",
+    label: "Dispatch",
     items: [
       { title: "Dispatches", url: "/dispatches", icon: Truck },
-      { title: "Reel Tracking", url: "/reels", icon: Disc3 },
       { title: "Packing Slip", url: "/packing-slip", icon: FileText },
     ],
   },

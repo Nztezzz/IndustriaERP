@@ -1,6 +1,6 @@
 /**
- * Shared enum-like constants for roles and reel/stock statuses.
- * Mirrors the `role`, `movement_type`, and `reel_status` values used in the
+ * Shared enum-like constants for roles and stock/dispatch statuses.
+ * Mirrors the `role`, `movement_type`, and `dispatch_status` values used in the
  * SQLite schema so the frontend and backend never drift out of sync.
  */
 
@@ -21,24 +21,6 @@ export function hasMinRole(role: Role | undefined, minRole: Role): boolean {
 
 export const STOCK_MOVEMENT_TYPES = ["inward", "outward", "adjustment"] as const
 export type StockMovementType = (typeof STOCK_MOVEMENT_TYPES)[number]
-
-export const REEL_STATUSES = [
-  "in_stock",
-  "dispatched",
-  "returned",
-  "lost",
-  "damaged",
-] as const
-export type ReelStatus = (typeof REEL_STATUSES)[number]
-
-export const REEL_EVENT_TYPES = [
-  "created",
-  "dispatched",
-  "returned",
-  "lost",
-  "damaged",
-] as const
-export type ReelEventType = (typeof REEL_EVENT_TYPES)[number]
 
 export const DISPATCH_STATUSES = ["pending", "delivered", "cancelled"] as const
 export type DispatchStatus = (typeof DISPATCH_STATUSES)[number]

@@ -19,14 +19,6 @@ export function useCustomer(id: string | undefined) {
   })
 }
 
-export function useCustomerReelHistory(id: string | undefined) {
-  return useQuery({
-    queryKey: queryKeys.customers.reelHistory(id ?? ""),
-    queryFn: () => customersApi.fetchCustomerReelHistory(id!),
-    enabled: !!id,
-  })
-}
-
 export function useCreateCustomer() {
   const queryClient = useQueryClient()
   return useMutation({

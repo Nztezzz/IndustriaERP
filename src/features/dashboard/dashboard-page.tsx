@@ -5,7 +5,6 @@ import {
   ArrowDownToLine,
   ArrowUpFromLine,
   Truck,
-  Disc3,
   RefreshCw,
 } from "lucide-react"
 import { PageHeader } from "@/components/layout/page-header"
@@ -100,20 +99,8 @@ export function DashboardPage() {
             label="Dispatches today"
             value={summary?.todayDispatchCount ?? 0}
             icon={Truck}
-            isLoading={isSummaryLoading}
-          />
-          {/*
-           * `primary` = the one card that gets the orange accent bar. Reels
-           * still out with customers is the metric this business actually
-           * runs on, so it earns the brand colour; everything else stays
-           * neutral so the orange means something.
-           */}
-          <StatCard
-            label="Reels pending return"
-            value={summary?.pendingReelCount ?? 0}
-            icon={Disc3}
             primary
-            hint="Currently out with customers"
+            hint="Shipments recorded today"
             isLoading={isSummaryLoading}
           />
         </div>
@@ -168,10 +155,10 @@ export function DashboardPage() {
               <Button
                 variant="outline"
                 className="justify-start"
-                onClick={() => navigate({ to: "/reels" })}
+                onClick={() => navigate({ to: "/inventory/history" })}
               >
-                <Disc3 />
-                View reel tracking
+                <Package />
+                View stock history
               </Button>
             </CardContent>
           </Card>

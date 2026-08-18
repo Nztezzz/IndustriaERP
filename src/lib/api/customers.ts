@@ -1,5 +1,5 @@
 import { apiRequest } from "@/lib/api/client"
-import type { CustomerDto, CustomerReelMovementDto } from "@/lib/api/types"
+import type { CustomerDto } from "@/lib/api/types"
 
 export interface CustomerInput {
   name: string
@@ -30,9 +30,4 @@ export function updateCustomer(id: string, input: CustomerInput) {
     method: "PUT",
     body: input,
   })
-}
-
-/** Every dispatch/return/lost/damaged reel event involving this customer. */
-export function fetchCustomerReelHistory(id: string) {
-  return apiRequest<CustomerReelMovementDto[]>(`/customers/${id}/reel-history`)
 }

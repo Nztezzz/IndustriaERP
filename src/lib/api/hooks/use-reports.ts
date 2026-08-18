@@ -23,13 +23,6 @@ export function useDailyActivityReport(query: reportsApi.ReportRangeQuery = {}) 
   })
 }
 
-export function usePendingReelsReport() {
-  return useQuery({
-    queryKey: queryKeys.reports.pendingReels(),
-    queryFn: reportsApi.fetchPendingReelsReport,
-  })
-}
-
 export function useDispatchReport(query: reportsApi.ReportRangeQuery = {}) {
   return useQuery({
     queryKey: queryKeys.reports.dispatches(query),

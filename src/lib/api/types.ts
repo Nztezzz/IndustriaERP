@@ -15,8 +15,6 @@
  */
 import type {
   DispatchStatus,
-  ReelEventType,
-  ReelStatus,
   Role,
   StockMovementType,
 } from "@/lib/constants"
@@ -127,50 +125,6 @@ export interface DispatchListItemDto {
   totalWeightKg: number | null
 }
 
-export interface ReelDto {
-  id: string
-  reelNumber: string
-  productId: string
-  status: ReelStatus
-  currentCustomerId: string | null
-  weightKg: number | null
-  createdAt: IsoTimestamp
-  updatedAt: IsoTimestamp
-}
-
-export interface ReelMovementDto {
-  id: string
-  eventType: ReelEventType
-  dispatchId: string | null
-  customerId: string | null
-  remarks: string | null
-  performedBy: string
-  createdAt: IsoTimestamp
-}
-
-/**
- * Shape returned by `GET /customers/{id}/reel-history` -- NOT the same as
- * `ReelMovementDto` above (that's `GET /reels/{reelNumber}/history`'s
- * shape). Both back onto the same `reel_movement` entity, but the two
- * route handlers project different subsets of it: this one includes
- * `reelId` (useful here since a customer's history spans many different
- * reels) and omits `customerId`/`performedBy` (redundant/unused for this
- * view). Keep this distinct rather than merging with `ReelMovementDto` --
- * they really are different response contracts, matching different Rust
- * structs (both happen to be named `ReelMovementDto` server-side, which is
- * an internal implementation detail, not a shared wire type).
- */
-export interface CustomerReelMovementDto {
-  id: string
-  reelId: string
-  reelNumber: string
-  productName: string
-  eventType: ReelEventType
-  dispatchId: string | null
-  remarks: string | null
-  createdAt: IsoTimestamp
-}
-
 export interface AuditLogDto {
   id: string
   entityType: string
@@ -218,12 +172,6 @@ export interface CustomerSearchHit {
   phone: string | null
 }
 
-export interface ReelSearchHit {
-  id: string
-  reelNumber: string
-  status: ReelStatus
-}
-
 export interface DispatchSearchHit {
   id: string
   invoiceNumber: string
@@ -232,7 +180,6 @@ export interface DispatchSearchHit {
 export interface SearchResultsDto {
   products: ProductSearchHit[]
   customers: CustomerSearchHit[]
-  reels: ReelSearchHit[]
   dispatches: DispatchSearchHit[]
 }
 
@@ -258,14 +205,6 @@ export interface DailyActivitySummaryDto {
   inwardCount: number
   outwardCount: number
   dispatchCount: number
-}
-
-export interface PendingReelReportRowDto {
-  reelNumber: string
-  productName: string
-  customerName: string | null
-  status: ReelStatus
-  since: IsoTimestamp
 }
 
 export interface DispatchReportRowDto {

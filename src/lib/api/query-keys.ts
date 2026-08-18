@@ -2,13 +2,12 @@
  * Central registry of TanStack Query key factories. Keeping these in one
  * file (rather than inlining array literals at each call site) is what
  * makes cross-module invalidation reliable -- e.g. creating a dispatch
- * needs to invalidate stock balances, reel lists, AND dashboard summary,
+ * needs to invalidate stock balances AND dashboard summary,
  * and it's easy to typo an inline key but hard to typo a function call.
  */
 import type { AuditLogQuery } from "@/lib/api/audit-log"
 import type { DispatchListQuery } from "@/lib/api/dispatches"
 import type { MovementsQuery } from "@/lib/api/stock"
-import type { ReelListQuery } from "@/lib/api/reels"
 import type { ReportRangeQuery } from "@/lib/api/reports"
 
 export const queryKeys = {
@@ -24,7 +23,6 @@ export const queryKeys = {
     all: (includeInactive?: boolean) =>
       ["customers", { includeInactive }] as const,
     detail: (id: string) => ["customers", "detail", id] as const,
-    reelHistory: (id: string) => ["customers", id, "reel-history"] as const,
   },
   stock: {
     balances: () => ["stock", "balances"] as const,
@@ -34,11 +32,6 @@ export const queryKeys = {
   dispatches: {
     all: (query: DispatchListQuery = {}) => ["dispatches", query] as const,
     detail: (id: string) => ["dispatches", "detail", id] as const,
-  },
-  reels: {
-    all: (query: ReelListQuery = {}) => ["reels", query] as const,
-    detail: (reelNumber: string) => ["reels", "detail", reelNumber] as const,
-    history: (reelNumber: string) => ["reels", reelNumber, "history"] as const,
   },
   dashboard: {
     summary: () => ["dashboard", "summary"] as const,
@@ -54,7 +47,6 @@ export const queryKeys = {
       ["reports", "customer-wise", query] as const,
     dailyActivity: (query: ReportRangeQuery = {}) =>
       ["reports", "daily-activity", query] as const,
-    pendingReels: () => ["reports", "pending-reels"] as const,
     dispatches: (query: ReportRangeQuery = {}) =>
       ["reports", "dispatches", query] as const,
   },

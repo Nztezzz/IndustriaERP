@@ -3,7 +3,6 @@ import type {
   CustomerDispatchSummaryDto,
   DailyActivitySummaryDto,
   DispatchReportRowDto,
-  PendingReelReportRowDto,
   ProductMovementSummaryDto,
 } from "@/lib/api/types"
 
@@ -31,10 +30,6 @@ export function fetchDailyActivityReport(query: ReportRangeQuery = {}) {
   return apiRequest<DailyActivitySummaryDto[]>("/reports/daily-activity", {
     query,
   })
-}
-
-export function fetchPendingReelsReport() {
-  return apiRequest<PendingReelReportRowDto[]>("/reports/pending-reels")
 }
 
 export function fetchDispatchReport(query: ReportRangeQuery = {}) {

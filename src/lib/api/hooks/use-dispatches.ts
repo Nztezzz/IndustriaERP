@@ -20,10 +20,9 @@ export function useDispatch(id: string | undefined) {
 }
 
 /**
- * Creating a dispatch atomically records stock outward movements and
- * transitions any included reels to `dispatched` on the backend -- so on
- * success we invalidate every view those changes touch: dispatch lists,
- * stock balances/movements, reel lists, and the dashboard.
+ * Creating a dispatch atomically records stock outward movements on the
+ * backend -- so on success we invalidate every view those changes touch:
+ * dispatch lists, stock balances/movements, and the dashboard.
  */
 export function useCreateDispatch() {
   const queryClient = useQueryClient()
@@ -33,7 +32,6 @@ export function useCreateDispatch() {
       queryClient.invalidateQueries({ queryKey: ["dispatches"] })
       queryClient.invalidateQueries({ queryKey: queryKeys.stock.balances() })
       queryClient.invalidateQueries({ queryKey: ["stock", "movements"] })
-      queryClient.invalidateQueries({ queryKey: ["reels"] })
       queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.summary() })
       queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.activity() })
       toast.success("Dispatch created")
