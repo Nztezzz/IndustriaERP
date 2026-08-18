@@ -186,7 +186,7 @@ export function CustomerFormDialog({
                   <FormItem>
                     <FormLabel>Email</FormLabel>
                     <FormControl>
-                      <Input placeholder="Optional" {...field} />
+                      <Input type="email" placeholder="Optional" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
