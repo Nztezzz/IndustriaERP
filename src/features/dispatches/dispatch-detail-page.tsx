@@ -36,7 +36,7 @@ export function DispatchDetailPage() {
     <>
       <PageHeader
         title={isLoading ? "Loading..." : dispatch?.invoiceNumber ?? "Dispatch not found"}
-        description="Dispatch details, line items, and attached reels."
+        description="Dispatch details and line items."
         actions={
           <Button variant="outline" size="sm" onClick={() => navigate({ to: "/dispatches" })}>
             <ArrowLeft />

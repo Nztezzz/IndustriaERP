@@ -2,7 +2,7 @@ import { useEffect } from "react"
 import { useFieldArray, useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import { CalendarIcon, Loader2, Package, Plus, Trash2, Truck, X } from "lucide-react"
+import { CalendarIcon, Loader2, Package, Plus, Trash2, Truck } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -49,25 +49,19 @@ const itemSchema = z.object({
   weightKg: optionalNumberField(),
 })
 
-const dispatchSchema = z
-  .object({
-    invoiceNumber: z.string().min(1, "Invoice number is required"),
-    customerId: z.string().min(1, "Select a customer"),
-    dispatchDate: z.date(),
-    vehicleNumber: z.string().optional(),
-    driverName: z.string().optional(),
-    driverPhone: z.string().optional(),
-    remarks: z.string().optional(),
-    items: z.array(itemSchema),
-    reelNumbers: z.array(z.object({ value: z.string().min(1, "Reel number required") })),
-  })
-  // Mirrors dispatch_service::create's own validation ("a dispatch must
-  // include at least one product line item or reel") so the error shows
-  // up in the form before a round trip to the backend.
-  .refine((data) => data.items.length > 0 || data.reelNumbers.length > 0, {
-    message: "Add at least one product line item or reel",
-    path: ["items"],
-  })
+const dispatchSchema = z.object({
+  invoiceNumber: z.string().min(1, "Invoice number is required"),
+  customerId: z.string().min(1, "Select a customer"),
+  dispatchDate: z.date(),
+  vehicleNumber: z.string().optional(),
+  driverName: z.string().optional(),
+  driverPhone: z.string().optional(),
+  remarks: z.string().optional(),
+  // Reel attachment was removed from this form, so line items are now the
+  // only way to satisfy the backend's "must contain at least one line item
+  // or reel" rule -- hence required here rather than validated via .refine().
+  items: z.array(itemSchema).min(1, "Add at least one product line item"),
+})
 
 type DispatchFormInput = z.input<typeof dispatchSchema>
 type DispatchFormValues = z.output<typeof dispatchSchema>
@@ -82,7 +76,6 @@ function emptyValues(): DispatchFormInput {
     driverPhone: "",
     remarks: "",
     items: [],
-    reelNumbers: [],
   }
 }
 
@@ -126,7 +119,6 @@ export function DispatchFormDialog({
   })
 
   const itemFields = useFieldArray({ control: form.control, name: "items" })
-  const reelFields = useFieldArray({ control: form.control, name: "reelNumbers" })
 
   useEffect(() => {
     if (open) {
@@ -149,7 +141,8 @@ export function DispatchFormDialog({
           quantity: item.quantity,
           weightKg: item.weightKg ?? null,
         })),
-        reelNumbers: values.reelNumbers.map((r) => r.value),
+        // reelNumbers deliberately omitted -- it's optional on the API type
+        // and reels are no longer attached from this form.
       },
       { onSuccess: () => onOpenChange(false) }
     )
@@ -167,8 +160,7 @@ export function DispatchFormDialog({
         <DialogHeader className="border-b border-border px-6 py-4 text-left">
           <DialogTitle>New dispatch</DialogTitle>
           <DialogDescription>
-            Records outward stock for each line item and marks any attached
-            reels as dispatched, all in one transaction.
+            Records outward stock for each line item, all in one transaction.
           </DialogDescription>
         </DialogHeader>
 
@@ -335,7 +327,7 @@ export function DispatchFormDialog({
 
                 {itemFields.fields.length === 0 ? (
                   <p className="rounded-lg border border-dashed border-border px-4 py-6 text-center text-sm text-muted-foreground">
-                    No line items yet. Add a product, or attach reels below.
+                    No line items yet. Add at least one product to dispatch.
                   </p>
                 ) : (
                   <div className="flex flex-col gap-2">
@@ -395,58 +387,11 @@ export function DispatchFormDialog({
                     ))}
                   </div>
                 )}
-              </div>
 
-              <Separator />
-
-              {/* ---------- Reels ---------- */}
-              <div className="flex flex-col gap-3">
-                <SectionHeading
-                  action={
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => reelFields.append({ value: "" })}
-                    >
-                      <Plus />
-                      Add reel
-                    </Button>
-                  }
-                >
-                  Reel numbers
-                </SectionHeading>
-
-                {reelFields.fields.length === 0 ? (
-                  <p className="rounded-lg border border-dashed border-border px-4 py-6 text-center text-sm text-muted-foreground">
-                    No reels attached. Each reel must currently be in stock —
-                    an invalid reel number rejects the whole dispatch.
-                  </p>
-                ) : (
-                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                    {reelFields.fields.map((field, index) => (
-                      <div key={field.id} className="flex items-center gap-2">
-                        <Input
-                          placeholder="Reel number"
-                          {...form.register(`reelNumbers.${index}.value`)}
-                        />
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon-sm"
-                          className="text-destructive"
-                          onClick={() => reelFields.remove(index)}
-                        >
-                          <X />
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {form.formState.errors.items?.root?.message && (
+                {/* Array-level "at least one line item" error. */}
+                {form.formState.errors.items?.message && (
                   <p className="text-sm text-destructive">
-                    {form.formState.errors.items.root.message}
+                    {form.formState.errors.items.message}
                   </p>
                 )}
               </div>
