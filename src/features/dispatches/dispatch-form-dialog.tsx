@@ -289,7 +289,16 @@ export function DispatchFormDialog({
                       <FormItem>
                         <FormLabel>Driver phone</FormLabel>
                         <FormControl>
-                          <Input placeholder="Phone number" {...field} />
+                          <Input
+                            placeholder="Phone number"
+                            type="tel"
+                            inputMode="numeric"
+                            {...field}
+                            onChange={(e) => {
+                              const digits = e.target.value.replace(/\D/g, "")
+                              field.onChange(digits)
+                            }}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>

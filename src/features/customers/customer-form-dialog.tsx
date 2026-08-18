@@ -164,7 +164,16 @@ export function CustomerFormDialog({
                   <FormItem>
                     <FormLabel>Phone</FormLabel>
                     <FormControl>
-                      <Input placeholder="Optional" {...field} />
+                      <Input
+                        placeholder="Optional"
+                        type="tel"
+                        inputMode="numeric"
+                        {...field}
+                        onChange={(e) => {
+                          const digits = e.target.value.replace(/\D/g, "")
+                          field.onChange(digits)
+                        }}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
