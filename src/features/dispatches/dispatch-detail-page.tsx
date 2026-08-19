@@ -176,6 +176,7 @@ export function DispatchDetailPage() {
           onOpenChange={setReturnOpen}
           dispatchId={dispatchId}
           invoiceNumber={dispatch.invoiceNumber}
+          customerName={dispatch.customerName}
         />
       )}
     </>

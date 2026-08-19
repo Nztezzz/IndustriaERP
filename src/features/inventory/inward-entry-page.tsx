@@ -32,7 +32,7 @@ const inwardSchema = z.object({
   quantity: z.coerce.number().positive("Quantity must be greater than zero"),
   customerId: z.string().optional(),
   date: z.string().min(1, "Date is required"),
-  referenceNumber: z.string().min(1, "Reference / Invoice number is required"),
+  referenceNumber: z.string().optional(),
   remarks: z.string().optional(),
 })
 
@@ -178,7 +178,7 @@ function InwardEntryForm() {
                 name="referenceNumber"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Reference / Invoice number</FormLabel>
+                    <FormLabel>Reference / Invoice number (optional)</FormLabel>
                     <FormControl>
                       <Input
                         {...field}
