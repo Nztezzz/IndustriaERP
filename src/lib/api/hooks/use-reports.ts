@@ -29,3 +29,10 @@ export function useDispatchReport(query: reportsApi.ReportRangeQuery = {}) {
     queryFn: () => reportsApi.fetchDispatchReport(query),
   })
 }
+
+export function useLedger(query: reportsApi.LedgerQuery = {}) {
+  return useQuery({
+    queryKey: queryKeys.reports.ledger(query),
+    queryFn: () => reportsApi.fetchLedger(query),
+  })
+}

@@ -8,7 +8,7 @@
 import type { AuditLogQuery } from "@/lib/api/audit-log"
 import type { DispatchListQuery } from "@/lib/api/dispatches"
 import type { MovementsQuery } from "@/lib/api/stock"
-import type { ReportRangeQuery } from "@/lib/api/reports"
+import type { LedgerQuery, ReportRangeQuery } from "@/lib/api/reports"
 
 export const queryKeys = {
   units: {
@@ -49,6 +49,7 @@ export const queryKeys = {
       ["reports", "daily-activity", query] as const,
     dispatches: (query: ReportRangeQuery = {}) =>
       ["reports", "dispatches", query] as const,
+    ledger: (query: LedgerQuery = {}) => ["reports", "ledger", query] as const,
   },
   auditLog: {
     all: (query: AuditLogQuery = {}) => ["audit-log", query] as const,

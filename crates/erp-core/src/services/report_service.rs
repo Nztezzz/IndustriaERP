@@ -324,3 +324,122 @@ pub async fn dispatch_count(db: &DatabaseConnection, range: DateRange) -> AppRes
     }
     Ok(query.count(db).await?)
 }
+
+#[derive(Serialize)]
+pub struct LedgerEntry {
+    pub id: Uuid,
+    pub date: NaiveDateTime,
+    /// Resolved from the linked dispatch's customer when the movement has
+    /// a `dispatch_id` (outward/return); otherwise parsed out of the
+    /// "Party: Name" convention Inward Entry writes into `remarks` (see
+    /// inward-entry-page.tsx). `None` when neither source has a name --
+    /// e.g. a manual adjustment with no party involved.
+    pub customer_name: Option<String>,
+    pub product_id: Uuid,
+    pub product_name: String,
+    pub product_sku: String,
+    pub movement_type: String,
+    pub quantity: f64,
+    pub reference_number: Option<String>,
+    pub remarks: Option<String>,
+}
+
+/// Pulls "Party: Name" out of a remarks string written by Inward Entry
+/// (see inward-entry-page.tsx's `partyStr` construction). Stops at the
+/// next " | " separator or end of string.
+fn parse_party_from_remarks(remarks: &str) -> Option<String> {
+    let idx = remarks.find("Party:")?;
+    let after = &remarks[idx + "Party:".len()..];
+    let name = after.split(" | ").next().unwrap_or(after).trim();
+    if name.is_empty() {
+        None
+    } else {
+        Some(name.to_string())
+    }
+}
+
+/// Individual-entry ledger: every stock movement in the range with its
+/// date, resolved customer/party name, and product -- the row-level view
+/// behind the "Show me every entry, not just a total" reports (as
+/// opposed to `product_wise_summary`, which only returns aggregates).
+///
+/// `customer_id` narrows to entries tied to one customer: either the
+/// dispatch a return/outward movement is linked to, or (for inward
+/// entries with no dispatch) a remarks-embedded party name matching that
+/// customer.
+pub async fn ledger_entries(
+    db: &DatabaseConnection,
+    range: DateRange,
+    customer_id: Option<Uuid>,
+) -> AppResult<Vec<LedgerEntry>> {
+    let mut query = stock_movement::Entity::find();
+    if let Some(from) = range.from {
+        query = query.filter(stock_movement::Column::CreatedAt.gte(from));
+    }
+    if let Some(to) = range.to {
+        query = query.filter(stock_movement::Column::CreatedAt.lte(to));
+    }
+    let movements = query
+        .order_by_desc(stock_movement::Column::CreatedAt)
+        .all(db)
+        .await?;
+
+    let products = product::Entity::find().all(db).await?;
+    let product_by_id: std::collections::HashMap<Uuid, &product::Model> =
+        products.iter().map(|p| (p.id, p)).collect();
+
+    let dispatches = dispatch::Entity::find().all(db).await?;
+    let dispatch_by_id: std::collections::HashMap<Uuid, &dispatch::Model> =
+        dispatches.iter().map(|d| (d.id, d)).collect();
+
+    let customers = customer::Entity::find().all(db).await?;
+    let customer_by_id: std::collections::HashMap<Uuid, &customer::Model> =
+        customers.iter().map(|c| (c.id, c)).collect();
+
+    // Name of the customer we're filtering to, if any -- used to match
+    // inward entries that only carry the name in remarks (no dispatch_id
+    // to resolve a customer_id from).
+    let filter_customer_name = customer_id.and_then(|id| customer_by_id.get(&id)).map(|c| c.name.as_str());
+
+    let mut rows = Vec::new();
+    for m in movements {
+        let dispatch_customer_id = m
+            .dispatch_id
+            .and_then(|id| dispatch_by_id.get(&id))
+            .map(|d| d.customer_id);
+
+        let customer_name = dispatch_customer_id
+            .and_then(|cid| customer_by_id.get(&cid))
+            .map(|c| c.name.clone())
+            .or_else(|| m.remarks.as_deref().and_then(parse_party_from_remarks));
+
+        if let Some(target_id) = customer_id {
+            let matches_dispatch = dispatch_customer_id == Some(target_id);
+            let matches_remarks = filter_customer_name
+                .map(|name| customer_name.as_deref() == Some(name))
+                .unwrap_or(false);
+            if !matches_dispatch && !matches_remarks {
+                continue;
+            }
+        }
+
+        let Some(product) = product_by_id.get(&m.product_id) else {
+            continue;
+        };
+
+        rows.push(LedgerEntry {
+            id: m.id,
+            date: m.created_at,
+            customer_name,
+            product_id: m.product_id,
+            product_name: product.name.clone(),
+            product_sku: product.sku.clone(),
+            movement_type: m.movement_type,
+            quantity: m.quantity,
+            reference_number: m.reference_number,
+            remarks: m.remarks,
+        });
+    }
+
+    Ok(rows)
+}

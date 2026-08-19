@@ -3,6 +3,7 @@ import type {
   CustomerDispatchSummaryDto,
   DailyActivitySummaryDto,
   DispatchReportRowDto,
+  LedgerEntryDto,
   ProductMovementSummaryDto,
 } from "@/lib/api/types"
 
@@ -12,6 +13,10 @@ export interface ReportRangeQuery {
   to?: string
   // Index signature so this satisfies apiRequest's generic query bag type.
   [key: string]: string | number | boolean | undefined | null
+}
+
+export interface LedgerQuery extends ReportRangeQuery {
+  customerId?: string
 }
 
 export function fetchProductWiseReport(query: ReportRangeQuery = {}) {
@@ -34,4 +39,8 @@ export function fetchDailyActivityReport(query: ReportRangeQuery = {}) {
 
 export function fetchDispatchReport(query: ReportRangeQuery = {}) {
   return apiRequest<DispatchReportRowDto[]>("/reports/dispatches", { query })
+}
+
+export function fetchLedger(query: LedgerQuery = {}) {
+  return apiRequest<LedgerEntryDto[]>("/reports/ledger", { query })
 }

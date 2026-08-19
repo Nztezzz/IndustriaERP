@@ -219,6 +219,24 @@ export interface DispatchReportRowDto {
   totalWeightKg: number | null
 }
 
+/**
+ * Row-level ledger entry: one stock movement with its date and resolved
+ * customer/party name, for reports that need individual entries rather
+ * than aggregated totals.
+ */
+export interface LedgerEntryDto {
+  id: string
+  date: IsoTimestamp
+  customerName: string | null
+  productId: string
+  productName: string
+  productSku: string
+  movementType: StockMovementType
+  quantity: number
+  referenceNumber: string | null
+  remarks: string | null
+}
+
 export interface PagedResult<T> {
   items: T[]
   total: number

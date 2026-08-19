@@ -14,6 +14,7 @@ pub fn router() -> Router<AppState> {
         .route("/reports/daily-activity", get(daily_activity))
         .route("/reports/pending-reels", get(pending_reels))
         .route("/reports/dispatches", get(dispatch_report))
+        .route("/reports/ledger", get(ledger))
 }
 
 #[derive(Deserialize)]
@@ -210,4 +211,70 @@ async fn dispatch_report(
         .await
         .map_err(ApiError)?;
     Ok(Json(rows.into_iter().map(DispatchReportRowDto::from).collect()))
+}
+
+#[derive(Deserialize)]
+struct LedgerQuery {
+    from: Option<NaiveDateTime>,
+    to: Option<NaiveDateTime>,
+    #[serde(rename = "customerId")]
+    customer_id: Option<Uuid>,
+}
+
+#[derive(Serialize)]
+struct LedgerEntryDto {
+    id: Uuid,
+    date: String,
+    #[serde(rename = "customerName")]
+    customer_name: Option<String>,
+    #[serde(rename = "productId")]
+    product_id: Uuid,
+    #[serde(rename = "productName")]
+    product_name: String,
+    #[serde(rename = "productSku")]
+    product_sku: String,
+    #[serde(rename = "movementType")]
+    movement_type: String,
+    quantity: f64,
+    #[serde(rename = "referenceNumber")]
+    reference_number: Option<String>,
+    remarks: Option<String>,
+}
+
+impl From<report_service::LedgerEntry> for LedgerEntryDto {
+    fn from(e: report_service::LedgerEntry) -> Self {
+        Self {
+            id: e.id,
+            date: e.date.to_string(),
+            customer_name: e.customer_name,
+            product_id: e.product_id,
+            product_name: e.product_name,
+            product_sku: e.product_sku,
+            movement_type: e.movement_type,
+            quantity: e.quantity,
+            reference_number: e.reference_number,
+            remarks: e.remarks,
+        }
+    }
+}
+
+/// Row-level ledger: every stock movement in the date range with its
+/// customer/party name resolved, for reports that need individual entries
+/// rather than the aggregated totals `product-wise` returns.
+async fn ledger(
+    State(state): State<AppState>,
+    CurrentUser(_): CurrentUser,
+    axum::extract::Query(query): axum::extract::Query<LedgerQuery>,
+) -> ApiResult<Json<Vec<LedgerEntryDto>>> {
+    let rows = report_service::ledger_entries(
+        &state.db,
+        report_service::DateRange {
+            from: query.from,
+            to: query.to,
+        },
+        query.customer_id,
+    )
+    .await
+    .map_err(ApiError)?;
+    Ok(Json(rows.into_iter().map(LedgerEntryDto::from).collect()))
 }

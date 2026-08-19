@@ -5,14 +5,15 @@ import { ProductWiseReportTab } from "@/features/reports/product-wise-report-tab
 import { CustomerWiseReportTab } from "@/features/reports/customer-wise-report-tab"
 import { DailyActivityReportTab } from "@/features/reports/daily-activity-report-tab"
 import { DispatchReportTab } from "@/features/reports/dispatch-report-tab"
+import { LedgerReportTab } from "@/features/reports/ledger-report-tab"
 import type { ReportDateRange } from "@/features/reports/date-range-filter"
 
 /**
- * Reports module. Four report types, each its own tab, sharing ONE
+ * Reports module. Five report types, each its own tab, sharing ONE
  * date-range selection across all (product-wise/customer-wise/daily-
- * activity/dispatches) -- switching tabs keeps the same range rather
- * than resetting it, since a user comparing "this month" across report
- * types shouldn't have to re-pick the range each time.
+ * activity/dispatches/ledger) -- switching tabs keeps the same range
+ * rather than resetting it, since a user comparing "this month" across
+ * report types shouldn't have to re-pick the range each time.
  */
 export function ReportsPage() {
   const [range, setRange] = useState<ReportDateRange>({})
@@ -22,7 +23,7 @@ export function ReportsPage() {
     <>
       <PageHeader
         title="Reports"
-        description="Daily, monthly, product-wise, customer-wise, and dispatch reports."
+        description="Daily, monthly, product-wise, customer-wise, dispatch, and ledger reports."
       />
       <div className="p-6">
         <Tabs defaultValue="product-wise">
@@ -31,6 +32,7 @@ export function ReportsPage() {
             <TabsTrigger value="customer-wise">Customer-wise</TabsTrigger>
             <TabsTrigger value="daily-activity">Daily / Monthly</TabsTrigger>
             <TabsTrigger value="dispatches">Dispatches</TabsTrigger>
+            <TabsTrigger value="ledger">Ledger</TabsTrigger>
           </TabsList>
           <TabsContent value="product-wise" className="pt-4">
             <ProductWiseReportTab range={range} onRangeChange={setRange} entryLimit={entryLimit} onEntryLimitChange={setEntryLimit} />
@@ -43,6 +45,9 @@ export function ReportsPage() {
           </TabsContent>
           <TabsContent value="dispatches" className="pt-4">
             <DispatchReportTab range={range} onRangeChange={setRange} entryLimit={entryLimit} onEntryLimitChange={setEntryLimit} />
+          </TabsContent>
+          <TabsContent value="ledger" className="pt-4">
+            <LedgerReportTab range={range} onRangeChange={setRange} entryLimit={entryLimit} onEntryLimitChange={setEntryLimit} />
           </TabsContent>
         </Tabs>
       </div>
