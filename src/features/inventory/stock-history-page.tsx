@@ -9,6 +9,7 @@ import {
   History,
   SlidersHorizontal,
   Trash2,
+  Undo2,
   X,
   type LucideIcon,
 } from "lucide-react"
@@ -49,7 +50,11 @@ import { useProducts } from "@/lib/api/hooks/use-products"
 import { useCustomers } from "@/lib/api/hooks/use-customers"
 import { useStockMovements, useDeleteMovements } from "@/lib/api/hooks/use-stock"
 import { parseResponseDateTime } from "@/lib/api/datetime"
-import { STOCK_MOVEMENT_TYPES, type StockMovementType } from "@/lib/constants"
+import {
+  MOVEMENT_TYPE_LABEL,
+  STOCK_MOVEMENT_TYPES,
+  type StockMovementType,
+} from "@/lib/constants"
 import type { StockMovementDto } from "@/lib/api/types"
 
 const PAGE_SIZE = 50
@@ -57,9 +62,15 @@ const PAGE_SIZE = 50
 const MOVEMENT_META: Record<StockMovementType, { icon: LucideIcon; className: string }> = {
   inward: { icon: ArrowDownToLine, className: "bg-primary/10 text-primary" },
   outward: { icon: ArrowUpFromLine, className: "bg-secondary text-secondary-foreground" },
+  return: { icon: Undo2, className: "bg-info/10 text-info" },
   adjustment: { icon: SlidersHorizontal, className: "bg-accent text-accent-foreground" },
 }
 
+/**
+ * Sign convention for the ledger view: only `outward` reduces stock.
+ * `return` adds back (same direction as inward), and `adjustment` carries
+ * its own signed delta.
+ */
 function getSignedQuantity(m: StockMovementDto): number {
   if (m.movementType === "outward") return -m.quantity
   if (m.movementType === "adjustment") return m.adjustmentDelta ?? m.quantity
@@ -181,7 +192,7 @@ export function StockHistoryPage() {
             <div className={`flex size-6 items-center justify-center rounded-full ${meta.className}`}>
               <Icon className="size-3.5" />
             </div>
-            <span className="capitalize">{movement.movementType}</span>
+            <span>{MOVEMENT_TYPE_LABEL[movement.movementType]}</span>
           </div>
         </TableCell>
         <TableCell className="max-w-[11rem] truncate" title={product?.name}>
@@ -287,7 +298,9 @@ export function StockHistoryPage() {
             <SelectContent>
               <SelectItem value="all">All types</SelectItem>
               {STOCK_MOVEMENT_TYPES.map((type) => (
-                <SelectItem key={type} value={type} className="capitalize">{type}</SelectItem>
+                <SelectItem key={type} value={type}>
+                  {MOVEMENT_TYPE_LABEL[type]}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>

@@ -43,6 +43,8 @@ struct ProductMovementSummaryDto {
     total_inward: f64,
     #[serde(rename = "totalOutward")]
     total_outward: f64,
+    #[serde(rename = "totalReturn")]
+    total_return: f64,
     #[serde(rename = "totalAdjustmentDelta")]
     total_adjustment_delta: f64,
 }
@@ -55,6 +57,7 @@ impl From<report_service::ProductMovementSummary> for ProductMovementSummaryDto 
             product_sku: s.product_sku,
             total_inward: s.total_inward,
             total_outward: s.total_outward,
+            total_return: s.total_return,
             total_adjustment_delta: s.total_adjustment_delta,
         }
     }
@@ -90,6 +93,8 @@ struct DailyActivitySummaryDto {
     inward_count: u64,
     #[serde(rename = "outwardCount")]
     outward_count: u64,
+    #[serde(rename = "returnCount")]
+    return_count: u64,
     #[serde(rename = "dispatchCount")]
     dispatch_count: u64,
 }
@@ -100,6 +105,7 @@ impl From<report_service::DailyActivitySummary> for DailyActivitySummaryDto {
             date: s.date,
             inward_count: s.inward_count,
             outward_count: s.outward_count,
+            return_count: s.return_count,
             dispatch_count: s.dispatch_count,
         }
     }

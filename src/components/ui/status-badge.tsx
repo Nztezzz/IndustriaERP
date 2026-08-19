@@ -1,19 +1,17 @@
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
-import type { DispatchStatus } from "@/lib/constants"
+import { DISPATCH_STATUS_LABEL, type DispatchStatus } from "@/lib/constants"
 
 type BadgeVariant = React.ComponentProps<typeof Badge>["variant"]
 
 const DISPATCH_STATUS_VARIANT: Record<DispatchStatus, BadgeVariant> = {
   pending: "warning",
   delivered: "success",
+  // Goods coming back isn't good or bad news, it's just a state change --
+  // so info/blue rather than success/green or destructive/red.
+  partially_returned: "info",
+  returned: "info",
   cancelled: "destructive",
-}
-
-/** Turns `in_stock` into `In stock` for display. */
-function humanise(status: string) {
-  const spaced = status.replace(/_/g, " ")
-  return spaced.charAt(0).toUpperCase() + spaced.slice(1)
 }
 
 export function DispatchStatusBadge({
@@ -25,7 +23,7 @@ export function DispatchStatusBadge({
 }) {
   return (
     <Badge variant={DISPATCH_STATUS_VARIANT[status]} className={cn(className)}>
-      {humanise(status)}
+      {DISPATCH_STATUS_LABEL[status] ?? status}
     </Badge>
   )
 }

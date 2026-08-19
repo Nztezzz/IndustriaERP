@@ -43,6 +43,7 @@ import type {
   CustomerSearchHit,
   DispatchSearchHit,
   ProductSearchHit,
+  StockMovementDto,
 } from "@/lib/api/types"
 
 
@@ -116,6 +117,38 @@ function HitRow({
   )
 }
 
+/**
+ * Net quantity a movement contributes to a PARTY's ledger balance.
+ *
+ * This is a party-facing view, not a warehouse one, so the sign convention
+ * differs from stock-history's:
+ *  - `outward`   -> +qty, the party received goods
+ *  - `return`    -> -qty, the party sent goods back
+ *  - `inward`    ->  0,   internal production, no party involved
+ *  - `adjustment`->  its signed delta
+ *
+ * Note `inward` deliberately contributes nothing. It used to be treated as
+ * the return marker, which double-counted internal production against
+ * whichever party happened to be on the remark.
+ */
+function ledgerQty(m: StockMovementDto): number {
+  switch (m.movementType) {
+    case "outward":
+      return m.quantity
+    case "return":
+      return -m.quantity
+    case "adjustment":
+      return m.adjustmentDelta ?? 0
+    default:
+      return 0
+  }
+}
+
+/** Sums `ledgerQty` across the movements for one product. */
+function sumLedger(list: StockMovementDto[], productId: string | undefined): number {
+  return list.reduce((s, m) => (m.productId === productId ? s + ledgerQty(m) : s), 0)
+}
+
 /** Party ledger view matching the reference spreadsheet format */
 function RecentEntriesSection() {
   const { data: products } = useProducts(true)
@@ -173,8 +206,7 @@ function RecentEntriesSection() {
   const totals: Record<string, number> = {}
   for (const row of rows) {
     const key = row.productId
-    const qty = row.movementType === "outward" ? row.quantity : row.movementType === "inward" ? -row.quantity : (row.adjustmentDelta ?? 0)
-    totals[key] = (totals[key] ?? 0) + qty
+    totals[key] = (totals[key] ?? 0) + ledgerQty(row)
   }
 
   async function handlePrint() {
@@ -215,22 +247,20 @@ function RecentEntriesSection() {
       const dateMatch = m.remarks?.match(/\[(\d{4}-\d{2}-\d{2})\]/)
       const dateStr = dateMatch?.[1] ?? parseResponseDateTime(m.createdAt).toLocaleDateString()
 
-      const isReturn = m.movementType === "inward"
+      const isReturn = m.movementType === "return"
       const pReelVal = m.productId === pReel?.id ? (isReturn ? "RETURN" : String(m.quantity)) : "0"
 
       const otherVals = otherProducts.map(p => {
         if (m.productId !== p.id) return "0"
-        return isReturn ? String(-m.quantity) : String(m.quantity)
+        return String(ledgerQty(m))
       })
 
       return [String(i + 1), party, dateStr, pReelVal, ...otherVals]
     })
 
     // Totals row
-    const pReelTotal = rows.reduce((s, m) => m.productId === pReel?.id ? s + (m.movementType === "outward" ? m.quantity : -m.quantity) : s, 0)
-    const otherTotals = otherProducts.map(p =>
-      rows.reduce((s, m) => m.productId === p.id ? s + (m.movementType === "outward" ? m.quantity : -m.quantity) : s, 0)
-    )
+    const pReelTotal = sumLedger(rows, pReel?.id)
+    const otherTotals = otherProducts.map((p) => sumLedger(rows, p.id))
     bodyData.push(["", "", "TOTAL", String(pReelTotal), ...otherTotals.map(String)])
 
     autoTable(doc, {
@@ -353,7 +383,7 @@ function RecentEntriesSection() {
                   const party = partyMatch?.[1]?.trim() ?? "\u2014"
                   const dateMatch = m.remarks?.match(/\[(\d{4}-\d{2}-\d{2})\]/)
                   const dateStr = dateMatch?.[1] ?? parseResponseDateTime(m.createdAt).toLocaleDateString()
-                  const isReturn = m.movementType === "inward"
+                  const isReturn = m.movementType === "return"
 
                   return (
                     <TableRow key={m.id}>
@@ -361,14 +391,12 @@ function RecentEntriesSection() {
                       <TableCell>{dateStr}</TableCell>
                       <TableCell className="text-center tabular-nums">
                         {m.productId === pReel?.id
-                          ? isReturn ? <span className="text-primary font-medium">RETURN</span> : m.quantity
+                          ? isReturn ? <span className="text-info font-medium">RETURN</span> : m.quantity
                           : 0}
                       </TableCell>
                       {otherProducts.map((p) => (
                         <TableCell key={p.id} className="text-center tabular-nums">
-                          {m.productId === p.id
-                            ? isReturn ? String(-m.quantity) : String(m.quantity)
-                            : "0"}
+                          {m.productId === p.id ? String(ledgerQty(m)) : "0"}
                         </TableCell>
                       ))}
                     </TableRow>
@@ -379,11 +407,11 @@ function RecentEntriesSection() {
                   <TableCell></TableCell>
                   <TableCell className="text-muted-foreground">OLD</TableCell>
                   <TableCell className="text-center tabular-nums">
-                    {oldRows.reduce((s, m) => m.productId === pReel?.id ? s + (m.movementType === "outward" ? m.quantity : -m.quantity) : s, 0)}
+                    {sumLedger(oldRows, pReel?.id)}
                   </TableCell>
                   {otherProducts.map((p) => (
                     <TableCell key={p.id} className="text-center tabular-nums">
-                      {oldRows.reduce((s, m) => m.productId === p.id ? s + (m.movementType === "outward" ? m.quantity : -m.quantity) : s, 0)}
+                      {sumLedger(oldRows, p.id)}
                     </TableCell>
                   ))}
                 </TableRow>
@@ -392,11 +420,11 @@ function RecentEntriesSection() {
                   <TableCell></TableCell>
                   <TableCell>TOTAL</TableCell>
                   <TableCell className="text-center tabular-nums">
-                    {allRows.reduce((s, m) => m.productId === pReel?.id ? s + (m.movementType === "outward" ? m.quantity : -m.quantity) : s, 0)}
+                    {sumLedger(allRows, pReel?.id)}
                   </TableCell>
                   {otherProducts.map((p) => (
                     <TableCell key={p.id} className="text-center tabular-nums">
-                      {allRows.reduce((s, m) => m.productId === p.id ? s + (m.movementType === "outward" ? m.quantity : -m.quantity) : s, 0)}
+                      {sumLedger(allRows, p.id)}
                     </TableCell>
                   ))}
                 </TableRow>

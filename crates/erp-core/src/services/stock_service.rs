@@ -26,6 +26,19 @@ pub struct OutwardInput {
     pub dispatch_id: Option<Uuid>,
 }
 
+/// A customer return of previously dispatched goods. `dispatch_id` is
+/// required (not optional like `OutwardInput`'s): a return only ever
+/// exists against a specific dispatch, and that link is what lets
+/// `return_service` compute how much of each line item is still
+/// returnable.
+pub struct ReturnInput {
+    pub product_id: Uuid,
+    pub quantity: f64,
+    pub dispatch_id: Uuid,
+    pub reference_number: Option<String>,
+    pub remarks: Option<String>,
+}
+
 pub struct AdjustmentInput {
     pub product_id: Uuid,
     /// Signed delta: positive corrects stock upward, negative corrects it
@@ -152,19 +165,24 @@ pub async fn record_inward(
     Ok(movement)
 }
 
-/// Same as `record_inward` but takes any `ConnectionTrait` (including a
-/// `DatabaseTransaction`) and an optional `dispatch_id` so
-/// `return_service` can compose it into a larger transaction and link the
-/// inward movement back to the original dispatch.
-pub async fn record_inward_in<C: ConnectionTrait>(
+/// Records a customer RETURN against a dispatch.
+///
+/// Like inward, this increases the on-hand balance -- the goods are
+/// physically back on the shelf. Unlike inward, it's tagged
+/// `movement_type = "return"` so reports can show returns as their own
+/// column instead of inflating the inward figure (a 20-unit inward must
+/// still read 20 after a 3-unit return, not 23).
+///
+/// Takes any `ConnectionTrait` so `return_service` can compose it into a
+/// single all-or-nothing transaction alongside the dispatch status update.
+pub async fn record_return_in<C: ConnectionTrait>(
     db: &C,
-    input: InwardInput,
+    input: ReturnInput,
     performed_by: Uuid,
-    dispatch_id: Option<Uuid>,
 ) -> AppResult<stock_movement::Model> {
     if input.quantity <= 0.0 {
         return Err(AppError::Validation(
-            "inward quantity must be greater than zero".into(),
+            "return quantity must be greater than zero".into(),
         ));
     }
 
@@ -172,10 +190,10 @@ pub async fn record_inward_in<C: ConnectionTrait>(
         db,
         NewMovement {
             product_id: input.product_id,
-            movement_type: StockMovementType::Inward,
+            movement_type: StockMovementType::Return,
             quantity: input.quantity,
             adjustment_delta: None,
-            dispatch_id,
+            dispatch_id: Some(input.dispatch_id),
             reference_number: input.reference_number,
             remarks: input.remarks,
             performed_by,

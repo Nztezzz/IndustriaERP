@@ -18,7 +18,14 @@ pub struct ProductMovementSummary {
     pub product_name: String,
     pub product_sku: String,
     pub total_inward: f64,
+    /// Stock sent out to customers (dispatches). Surfaced in the UI as
+    /// "Dispatch" rather than "Outward" -- dispatching is the only way
+    /// stock leaves, so the operator-facing word is the useful one.
     pub total_outward: f64,
+    /// Stock that came back from customers. Tracked separately from
+    /// `total_inward` on purpose: inward is what was produced/received and
+    /// must not move when goods are returned.
+    pub total_return: f64,
     pub total_adjustment_delta: f64,
 }
 
@@ -52,6 +59,7 @@ pub async fn product_wise_summary(
                     product_sku: p.sku,
                     total_inward: 0.0,
                     total_outward: 0.0,
+                    total_return: 0.0,
                     total_adjustment_delta: 0.0,
                 },
             )
@@ -65,6 +73,7 @@ pub async fn product_wise_summary(
         match movement.movement_type.as_str() {
             "inward" => summary.total_inward += movement.quantity,
             "outward" => summary.total_outward += movement.quantity,
+            "return" => summary.total_return += movement.quantity,
             "adjustment" => {
                 summary.total_adjustment_delta += movement.adjustment_delta.unwrap_or(0.0)
             }
@@ -136,6 +145,7 @@ pub struct DailyActivitySummary {
     pub date: String,
     pub inward_count: u64,
     pub outward_count: u64,
+    pub return_count: u64,
     pub dispatch_count: u64,
 }
 
@@ -174,11 +184,13 @@ pub async fn daily_activity(
             date,
             inward_count: 0,
             outward_count: 0,
+            return_count: 0,
             dispatch_count: 0,
         });
         match m.movement_type.as_str() {
             "inward" => entry.inward_count += 1,
             "outward" => entry.outward_count += 1,
+            "return" => entry.return_count += 1,
             _ => {}
         }
     }
@@ -189,6 +201,7 @@ pub async fn daily_activity(
             date,
             inward_count: 0,
             outward_count: 0,
+            return_count: 0,
             dispatch_count: 0,
         });
         entry.dispatch_count += 1;

@@ -73,9 +73,18 @@ impl Role {
 }
 
 string_enum!(
+    /// `Return` is deliberately its OWN variant rather than reusing
+    /// `Inward`. Both increase the on-hand balance, but they mean different
+    /// things in reports: `Inward` is "we manufactured/received this much",
+    /// and that figure must stay fixed once recorded. Folding returns into
+    /// it made a 20-unit inward read as 23 after a 3-unit return, which is
+    /// wrong -- you never inwarded 23. Keeping them separate lets the
+    /// product-wise report show Inward | Dispatch | Return as three
+    /// independent columns.
     StockMovementType {
         Inward => "inward",
         Outward => "outward",
+        Return => "return",
         Adjustment => "adjustment",
     }
 );
@@ -101,9 +110,14 @@ string_enum!(
 );
 
 string_enum!(
+    /// `PartiallyReturned` / `Returned` are set automatically by
+    /// `return_service` as returns come in, so a dispatch never sits at
+    /// "pending" after its goods have physically come back.
     DispatchStatus {
         Pending => "pending",
         Delivered => "delivered",
+        PartiallyReturned => "partially_returned",
+        Returned => "returned",
         Cancelled => "cancelled",
     }
 );

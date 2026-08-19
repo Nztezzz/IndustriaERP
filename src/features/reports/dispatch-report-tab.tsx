@@ -6,29 +6,32 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
+import { DispatchStatusBadge } from "@/components/ui/status-badge"
 import { ExportButtons } from "@/components/export-buttons"
 import { ReportTableCard } from "@/features/reports/report-table-card"
 import { DateRangeFilter, toReportRangeQuery, type ReportDateRange } from "@/features/reports/date-range-filter"
 import { useDispatchReport } from "@/lib/api/hooks/use-reports"
 import { parseResponseDateTime } from "@/lib/api/datetime"
-import type { ExportColumn } from "@/lib/export"
+import { sumBy, type ExportColumn } from "@/lib/export"
+import { DISPATCH_STATUS_LABEL } from "@/lib/constants"
 import type { DispatchReportRowDto } from "@/lib/api/types"
-import type { DispatchStatus } from "@/lib/constants"
-
-// Same status->badge-color mapping used by dispatch-list-page.tsx (task 19).
-const STATUS_VARIANT: Record<DispatchStatus, "outline" | "secondary" | "destructive"> = {
-  pending: "outline",
-  delivered: "secondary",
-  cancelled: "destructive",
-}
 
 const COLUMNS: ExportColumn<DispatchReportRowDto>[] = [
-  { header: "Invoice", accessor: (r) => r.invoiceNumber },
+  {
+    header: "Invoice",
+    accessor: (r) => r.invoiceNumber,
+    // Row count belongs on the first column so the TOTAL row reads
+    // "3 dispatches" rather than an unexplained bare number.
+    total: (rows) => `TOTAL (${rows.length})`,
+  },
   { header: "Customer", accessor: (r) => r.customerName },
   { header: "Dispatch date", accessor: (r) => parseResponseDateTime(r.dispatchDate).toLocaleString() },
-  { header: "Status", accessor: (r) => r.status },
-  { header: "Weight (kg)", accessor: (r) => r.totalWeightKg },
+  { header: "Status", accessor: (r) => DISPATCH_STATUS_LABEL[r.status] ?? r.status },
+  {
+    header: "Weight (kg)",
+    accessor: (r) => r.totalWeightKg,
+    total: (rows) => sumBy(rows, (r) => r.totalWeightKg),
+  },
 ]
 
 /**
@@ -89,15 +92,19 @@ export function DispatchReportTab({
                   {parseResponseDateTime(row.dispatchDate).toLocaleString()}
                 </TableCell>
                 <TableCell>
-                  <Badge variant={STATUS_VARIANT[row.status]} className="capitalize">
-                    {row.status}
-                  </Badge>
+                  <DispatchStatusBadge status={row.status} />
                 </TableCell>
                 <TableCell className="text-right tabular-nums text-muted-foreground">
                   {row.totalWeightKg ? `${row.totalWeightKg} kg` : "—"}
                 </TableCell>
               </TableRow>
             ))}
+            <TableRow className="border-t-2 bg-muted/50 font-bold">
+              <TableCell colSpan={4}>TOTAL ({rows.length})</TableCell>
+              <TableCell className="text-right tabular-nums">
+                {sumBy(rows, (r) => r.totalWeightKg)} kg
+              </TableCell>
+            </TableRow>
           </TableBody>
         </Table>
       </ReportTableCard>

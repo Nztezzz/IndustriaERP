@@ -3,7 +3,6 @@ import { useNavigate, useParams } from "@tanstack/react-router"
 import { ArrowLeft, Package, Undo2, User } from "lucide-react"
 import { PageHeader } from "@/components/layout/page-header"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import {
@@ -19,13 +18,7 @@ import { useProducts } from "@/lib/api/hooks/use-products"
 import { parseResponseDateTime } from "@/lib/api/datetime"
 import { RequireRole } from "@/components/layout/require-role"
 import { ReturnDialog } from "@/features/dispatches/return-dialog"
-import type { DispatchStatus } from "@/lib/constants"
-
-const STATUS_VARIANT: Record<DispatchStatus, "outline" | "secondary" | "destructive"> = {
-  pending: "outline",
-  delivered: "secondary",
-  cancelled: "destructive",
-}
+import { DispatchStatusBadge } from "@/components/ui/status-badge"
 
 export function DispatchDetailPage() {
   const navigate = useNavigate()
@@ -77,12 +70,10 @@ export function DispatchDetailPage() {
               </p>
             ) : (
               <>
-                <Badge
-                  variant={STATUS_VARIANT[dispatch.status]}
-                  className="w-fit capitalize"
-                >
-                  {dispatch.status}
-                </Badge>
+                <DispatchStatusBadge
+                  status={dispatch.status}
+                  className="w-fit"
+                />
                 <div className="flex items-center gap-2 text-sm">
                   <User className="size-4 text-muted-foreground" />
                   {dispatch.customerName}
@@ -176,7 +167,6 @@ export function DispatchDetailPage() {
           onOpenChange={setReturnOpen}
           dispatchId={dispatchId}
           invoiceNumber={dispatch.invoiceNumber}
-          customerName={dispatch.customerName}
         />
       )}
     </>

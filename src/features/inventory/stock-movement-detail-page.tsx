@@ -4,6 +4,7 @@ import {
   ArrowLeft,
   ArrowUpFromLine,
   SlidersHorizontal,
+  Undo2,
   type LucideIcon,
 } from "lucide-react"
 import { PageHeader } from "@/components/layout/page-header"
@@ -14,11 +15,14 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { useStockMovement } from "@/lib/api/hooks/use-stock"
 import { useProducts } from "@/lib/api/hooks/use-products"
 import { parseResponseDateTime } from "@/lib/api/datetime"
-import type { StockMovementType } from "@/lib/constants"
+import { MOVEMENT_TYPE_LABEL, type StockMovementType } from "@/lib/constants"
 
 const MOVEMENT_META: Record<StockMovementType, { icon: LucideIcon; label: string; className: string }> = {
   inward: { icon: ArrowDownToLine, label: "Inward", className: "bg-primary/10 text-primary" },
-  outward: { icon: ArrowUpFromLine, label: "Outward", className: "bg-secondary text-secondary-foreground" },
+  // Labelled "Dispatch" (not "Outward") since dispatching is the only way
+  // stock leaves -- see MOVEMENT_TYPE_LABEL in lib/constants.ts.
+  outward: { icon: ArrowUpFromLine, label: "Dispatch", className: "bg-secondary text-secondary-foreground" },
+  return: { icon: Undo2, label: "Return", className: "bg-info/10 text-info" },
   adjustment: { icon: SlidersHorizontal, label: "Adjustment", className: "bg-accent text-accent-foreground" },
 }
 
@@ -94,8 +98,8 @@ export function StockMovementDetailPage() {
                   >
                     <Icon className="size-4" />
                   </div>
-                  <Badge variant="outline" className="capitalize">
-                    {movement.movementType}
+                  <Badge variant="outline">
+                    {MOVEMENT_TYPE_LABEL[movement.movementType]}
                   </Badge>
                 </div>
 

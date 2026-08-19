@@ -24,28 +24,71 @@ import { ExportButtons } from "@/components/export-buttons"
 import { ReportTableCard } from "@/features/reports/report-table-card"
 import { DateRangeFilter, toReportRangeQuery, type ReportDateRange } from "@/features/reports/date-range-filter"
 import { useDailyActivityReport } from "@/lib/api/hooks/use-reports"
-import type { ExportColumn } from "@/lib/export"
+import { sumBy, type ExportColumn } from "@/lib/export"
 import type { DailyActivitySummaryDto } from "@/lib/api/types"
 
 const COLUMNS: ExportColumn<DailyActivitySummaryDto>[] = [
   { header: "Date", accessor: (r) => r.date },
-  { header: "Inward count", accessor: (r) => r.inwardCount },
-  { header: "Outward count", accessor: (r) => r.outwardCount },
-  { header: "Dispatch count", accessor: (r) => r.dispatchCount },
+  {
+    header: "Inward",
+    accessor: (r) => r.inwardCount,
+    total: (rows) => sumBy(rows, (r) => r.inwardCount),
+  },
+  {
+    header: "Dispatch",
+    accessor: (r) => r.outwardCount,
+    total: (rows) => sumBy(rows, (r) => r.outwardCount),
+  },
+  {
+    header: "Return",
+    accessor: (r) => r.returnCount,
+    total: (rows) => sumBy(rows, (r) => r.returnCount),
+  },
+  {
+    header: "Dispatch count",
+    accessor: (r) => r.dispatchCount,
+    total: (rows) => sumBy(rows, (r) => r.dispatchCount),
+  },
 ]
 
-interface MonthlyRow {
-  month: string
+/**
+ * The count fields shared by the daily and monthly row shapes. Only the
+ * bucket key differs between them ("date" vs "month"), so totalling logic
+ * can work off this instead of a union.
+ */
+interface ActivityCounts {
   inwardCount: number
   outwardCount: number
+  returnCount: number
   dispatchCount: number
+}
+
+interface MonthlyRow extends ActivityCounts {
+  month: string
 }
 
 const MONTHLY_COLUMNS: ExportColumn<MonthlyRow>[] = [
   { header: "Month", accessor: (r) => r.month },
-  { header: "Inward count", accessor: (r) => r.inwardCount },
-  { header: "Outward count", accessor: (r) => r.outwardCount },
-  { header: "Dispatch count", accessor: (r) => r.dispatchCount },
+  {
+    header: "Inward",
+    accessor: (r) => r.inwardCount,
+    total: (rows) => sumBy(rows, (r) => r.inwardCount),
+  },
+  {
+    header: "Dispatch",
+    accessor: (r) => r.outwardCount,
+    total: (rows) => sumBy(rows, (r) => r.outwardCount),
+  },
+  {
+    header: "Return",
+    accessor: (r) => r.returnCount,
+    total: (rows) => sumBy(rows, (r) => r.returnCount),
+  },
+  {
+    header: "Dispatch count",
+    accessor: (r) => r.dispatchCount,
+    total: (rows) => sumBy(rows, (r) => r.dispatchCount),
+  },
 ]
 
 /** Rolls up daily buckets into a "YYYY-MM" monthly view by summing --
@@ -61,12 +104,14 @@ function toMonthly(rows: DailyActivitySummaryDto[]): MonthlyRow[] {
     if (existing) {
       existing.inwardCount += row.inwardCount
       existing.outwardCount += row.outwardCount
+      existing.returnCount += row.returnCount
       existing.dispatchCount += row.dispatchCount
     } else {
       byMonth.set(month, {
         month,
         inwardCount: row.inwardCount,
         outwardCount: row.outwardCount,
+        returnCount: row.returnCount,
         dispatchCount: row.dispatchCount,
       })
     }
@@ -110,12 +155,14 @@ export function DailyActivityReportTab({
             label: r.date,
             inwardCount: r.inwardCount,
             outwardCount: r.outwardCount,
+            returnCount: r.returnCount,
             dispatchCount: r.dispatchCount,
           }))
         : monthlyRows.map((r) => ({
             label: r.month,
             inwardCount: r.inwardCount,
             outwardCount: r.outwardCount,
+            returnCount: r.returnCount,
             dispatchCount: r.dispatchCount,
           })),
     [granularity, dailyRows, monthlyRows]
@@ -190,7 +237,8 @@ export function DailyActivityReportTab({
                 />
                 <Legend wrapperStyle={{ fontSize: 12 }} />
                 <Bar dataKey="inwardCount" name="Inward" fill="var(--chart-1)" radius={3} />
-                <Bar dataKey="outwardCount" name="Outward" fill="var(--chart-3)" radius={3} />
+                <Bar dataKey="outwardCount" name="Dispatch" fill="var(--chart-3)" radius={3} />
+                <Bar dataKey="returnCount" name="Return" fill="var(--chart-2)" radius={3} />
                 <Bar dataKey="dispatchCount" name="Dispatches" fill="var(--chart-5)" radius={3} />
               </BarChart>
             </ResponsiveContainer>
@@ -208,7 +256,8 @@ export function DailyActivityReportTab({
             <TableRow>
               <TableHead>{granularity === "daily" ? "Date" : "Month"}</TableHead>
               <TableHead className="text-right">Inward</TableHead>
-              <TableHead className="text-right">Outward</TableHead>
+              <TableHead className="text-right">Dispatch</TableHead>
+              <TableHead className="text-right">Return</TableHead>
               <TableHead className="text-right">Dispatches</TableHead>
             </TableRow>
           </TableHeader>
@@ -219,6 +268,7 @@ export function DailyActivityReportTab({
                     <TableCell className="font-medium">{row.date}</TableCell>
                     <TableCell className="text-right tabular-nums">{row.inwardCount}</TableCell>
                     <TableCell className="text-right tabular-nums">{row.outwardCount}</TableCell>
+                    <TableCell className="text-right tabular-nums">{row.returnCount}</TableCell>
                     <TableCell className="text-right tabular-nums">{row.dispatchCount}</TableCell>
                   </TableRow>
                 ))
@@ -227,9 +277,36 @@ export function DailyActivityReportTab({
                     <TableCell className="font-medium">{row.month}</TableCell>
                     <TableCell className="text-right tabular-nums">{row.inwardCount}</TableCell>
                     <TableCell className="text-right tabular-nums">{row.outwardCount}</TableCell>
+                    <TableCell className="text-right tabular-nums">{row.returnCount}</TableCell>
                     <TableCell className="text-right tabular-nums">{row.dispatchCount}</TableCell>
                   </TableRow>
                 ))}
+            {(() => {
+              // One TOTAL row for whichever granularity is showing.
+              // MonthlyRow and DailyActivitySummaryDto share every count
+              // field (only the bucket key differs), so this is annotated
+              // as the common count shape -- a bare union of the two array
+              // types wouldn't unify against sumBy's single generic.
+              const totalRows: ActivityCounts[] =
+                granularity === "daily" ? dailyRows : monthlyRows
+              return (
+                <TableRow className="border-t-2 bg-muted/50 font-bold">
+                  <TableCell>TOTAL</TableCell>
+                  <TableCell className="text-right tabular-nums">
+                    {sumBy(totalRows, (r) => r.inwardCount)}
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums">
+                    {sumBy(totalRows, (r) => r.outwardCount)}
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums">
+                    {sumBy(totalRows, (r) => r.returnCount)}
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums">
+                    {sumBy(totalRows, (r) => r.dispatchCount)}
+                  </TableCell>
+                </TableRow>
+              )
+            })()}
           </TableBody>
         </Table>
       </ReportTableCard>

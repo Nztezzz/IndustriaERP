@@ -10,25 +10,62 @@ import { ExportButtons } from "@/components/export-buttons"
 import { ReportTableCard } from "@/features/reports/report-table-card"
 import { DateRangeFilter, toReportRangeQuery, type ReportDateRange } from "@/features/reports/date-range-filter"
 import { useProductWiseReport } from "@/lib/api/hooks/use-reports"
-import type { ExportColumn } from "@/lib/export"
+import { sumBy, type ExportColumn } from "@/lib/export"
 import type { ProductMovementSummaryDto } from "@/lib/api/types"
+
+/**
+ * Net stock change for a product: what came in, minus what went out to
+ * customers, plus what customers sent back, plus any manual correction.
+ *
+ * Returns add back because the goods are physically on the shelf again --
+ * but they're counted here rather than inside `totalInward`, so the inward
+ * figure keeps meaning "produced/received".
+ */
+function netChange(r: ProductMovementSummaryDto): number {
+  return r.totalInward - r.totalOutward + r.totalReturn + r.totalAdjustmentDelta
+}
 
 const COLUMNS: ExportColumn<ProductMovementSummaryDto>[] = [
   { header: "SKU", accessor: (r) => r.productSku },
   { header: "Product", accessor: (r) => r.productName },
-  { header: "Total inward", accessor: (r) => r.totalInward },
-  { header: "Total outward", accessor: (r) => r.totalOutward },
-  { header: "Adjustment delta", accessor: (r) => r.totalAdjustmentDelta },
-  { header: "Net change", accessor: (r) => r.totalInward - r.totalOutward + r.totalAdjustmentDelta },
+  {
+    header: "Inward",
+    accessor: (r) => r.totalInward,
+    total: (rows) => sumBy(rows, (r) => r.totalInward),
+  },
+  {
+    header: "Dispatch",
+    accessor: (r) => r.totalOutward,
+    total: (rows) => sumBy(rows, (r) => r.totalOutward),
+  },
+  {
+    header: "Return",
+    accessor: (r) => r.totalReturn,
+    total: (rows) => sumBy(rows, (r) => r.totalReturn),
+  },
+  {
+    header: "Adjustments",
+    accessor: (r) => r.totalAdjustmentDelta,
+    total: (rows) => sumBy(rows, (r) => r.totalAdjustmentDelta),
+  },
+  {
+    header: "Net change",
+    accessor: (r) => netChange(r),
+    total: (rows) => sumBy(rows, netChange),
+  },
 ]
 
 /**
- * Product-wise movement summary: total inward/outward/adjustment per
- * product within the selected date range. `ProductMovementSummaryDto`
- * has no pre-computed "net" figure server-side (confirmed by reading
- * report_service.rs directly), so it's derived client-side for both the
- * on-screen table and the export -- inward minus outward plus the
- * signed adjustment delta.
+ * Product-wise movement summary: inward / dispatch / return / adjustment
+ * totals per product within the selected date range.
+ *
+ * "Dispatch" is the operator-facing name for what the ledger stores as
+ * `outward` -- dispatching is the only way stock leaves. `Return` is its
+ * own column rather than being folded into Inward, so a 20-unit inward
+ * still reads 20 after a 3-unit return.
+ *
+ * The server sends no pre-computed net figure, so `netChange` derives it
+ * client-side for the table, the TOTAL row, and all three exports.
  */
 export function ProductWiseReportTab({
   range,
@@ -68,20 +105,22 @@ export function ProductWiseReportTab({
               <TableHead>SKU</TableHead>
               <TableHead>Product</TableHead>
               <TableHead className="text-right">Inward</TableHead>
-              <TableHead className="text-right">Outward</TableHead>
+              <TableHead className="text-right">Dispatch</TableHead>
+              <TableHead className="text-right">Return</TableHead>
               <TableHead className="text-right">Adjustments</TableHead>
               <TableHead className="text-right">Net change</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {rows.map((row) => {
-              const net = row.totalInward - row.totalOutward + row.totalAdjustmentDelta
+              const net = netChange(row)
               return (
                 <TableRow key={row.productId}>
                   <TableCell className="font-medium">{row.productSku}</TableCell>
                   <TableCell>{row.productName}</TableCell>
                   <TableCell className="text-right tabular-nums">{row.totalInward}</TableCell>
                   <TableCell className="text-right tabular-nums">{row.totalOutward}</TableCell>
+                  <TableCell className="text-right tabular-nums">{row.totalReturn}</TableCell>
                   <TableCell className="text-right tabular-nums">
                     {row.totalAdjustmentDelta > 0 ? `+${row.totalAdjustmentDelta}` : row.totalAdjustmentDelta}
                   </TableCell>
@@ -93,6 +132,24 @@ export function ProductWiseReportTab({
                 </TableRow>
               )
             })}
+            <TableRow className="border-t-2 bg-muted/50 font-bold">
+              <TableCell colSpan={2}>TOTAL</TableCell>
+              <TableCell className="text-right tabular-nums">
+                {sumBy(rows, (r) => r.totalInward)}
+              </TableCell>
+              <TableCell className="text-right tabular-nums">
+                {sumBy(rows, (r) => r.totalOutward)}
+              </TableCell>
+              <TableCell className="text-right tabular-nums">
+                {sumBy(rows, (r) => r.totalReturn)}
+              </TableCell>
+              <TableCell className="text-right tabular-nums">
+                {sumBy(rows, (r) => r.totalAdjustmentDelta)}
+              </TableCell>
+              <TableCell className="text-right tabular-nums">
+                {sumBy(rows, netChange)}
+              </TableCell>
+            </TableRow>
           </TableBody>
         </Table>
       </ReportTableCard>

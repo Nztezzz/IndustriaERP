@@ -11,13 +11,21 @@ import { ExportButtons } from "@/components/export-buttons"
 import { ReportTableCard } from "@/features/reports/report-table-card"
 import { DateRangeFilter, toReportRangeQuery, type ReportDateRange } from "@/features/reports/date-range-filter"
 import { useCustomerWiseReport } from "@/lib/api/hooks/use-reports"
-import type { ExportColumn } from "@/lib/export"
+import { sumBy, type ExportColumn } from "@/lib/export"
 import type { CustomerDispatchSummaryDto } from "@/lib/api/types"
 
 const COLUMNS: ExportColumn<CustomerDispatchSummaryDto>[] = [
   { header: "Customer", accessor: (r) => r.customerName },
-  { header: "Dispatch count", accessor: (r) => r.dispatchCount },
-  { header: "Total weight (kg)", accessor: (r) => r.totalWeightKg },
+  {
+    header: "Dispatch count",
+    accessor: (r) => r.dispatchCount,
+    total: (rows) => sumBy(rows, (r) => r.dispatchCount),
+  },
+  {
+    header: "Total weight (kg)",
+    accessor: (r) => r.totalWeightKg,
+    total: (rows) => sumBy(rows, (r) => r.totalWeightKg),
+  },
 ]
 
 /**
@@ -86,6 +94,15 @@ export function CustomerWiseReportTab({
                 </TableCell>
               </TableRow>
             ))}
+            <TableRow className="border-t-2 bg-muted/50 font-bold">
+              <TableCell>TOTAL</TableCell>
+              <TableCell className="text-right tabular-nums">
+                {sumBy(rows, (r) => r.dispatchCount)}
+              </TableCell>
+              <TableCell className="text-right tabular-nums">
+                {sumBy(rows, (r) => r.totalWeightKg)} kg
+              </TableCell>
+            </TableRow>
           </TableBody>
         </Table>
       </ReportTableCard>

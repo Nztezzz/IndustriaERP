@@ -188,7 +188,10 @@ export interface ProductMovementSummaryDto {
   productName: string
   productSku: string
   totalInward: number
+  /** Shown in the UI as "Dispatch" -- see MOVEMENT_TYPE_LABEL. */
   totalOutward: number
+  /** Returns are tracked separately so `totalInward` never moves. */
+  totalReturn: number
   totalAdjustmentDelta: number
 }
 
@@ -204,6 +207,7 @@ export interface DailyActivitySummaryDto {
   date: string
   inwardCount: number
   outwardCount: number
+  returnCount: number
   dispatchCount: number
 }
 

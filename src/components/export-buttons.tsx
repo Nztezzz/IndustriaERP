@@ -10,7 +10,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { exportToExcel, exportToPdf, type ExportColumn } from "@/lib/export"
+import {
+  buildTotalsRow,
+  exportToExcel,
+  exportToPdf,
+  hasTotals,
+  type ExportColumn,
+} from "@/lib/export"
 import { addLogoToPdf } from "@/lib/logo-data"
 
 /**
@@ -63,15 +69,34 @@ export function ExportButtons<T>({
     doc.setFontSize(8)
     doc.text(`Showing ${printRows.length} of ${rows.length} entries | Generated: ${new Date().toLocaleString()}`, 14, 24)
 
+    // TOTAL as the table's last row so figures line up under their
+    // columns. Totals cover the rows actually printed, not the full set,
+    // so the printed page is internally consistent.
+    const body = printRows.map((row) =>
+      columns.map((c) => String(c.accessor(row) ?? ""))
+    )
+    const showTotals = hasTotals(columns)
+    if (showTotals) body.push(buildTotalsRow(columns, printRows))
+
     autoTable(doc, {
       startY: 28,
       head: [columns.map((c) => c.header)],
-      body: printRows.map((row) => columns.map((c) => String(c.accessor(row) ?? ""))),
+      body,
       theme: "grid",
       headStyles: { fillColor: [245, 130, 13], textColor: 255, fontStyle: "bold", fontSize: 7 },
       bodyStyles: { fontSize: 7 },
       styles: { cellPadding: 2, overflow: "linebreak" },
       margin: { left: 10, right: 10 },
+      didParseCell: (data) => {
+        if (
+          showTotals &&
+          data.section === "body" &&
+          data.row.index === body.length - 1
+        ) {
+          data.cell.styles.fontStyle = "bold"
+          data.cell.styles.fillColor = [240, 239, 237]
+        }
+      },
     })
 
     const pdfBlob = doc.output("blob")

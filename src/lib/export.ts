@@ -39,6 +39,41 @@ export interface ExportColumn<T> {
   header: string
   /** Cell/column value for this row. `null` renders as a blank cell. */
   accessor: (row: T) => string | number | null
+  /**
+   * Value for this column in the TOTAL footer row. Declared per column so
+   * a report describes its totals once and every output path (on-screen
+   * table, Excel, PDF, Print) stays in agreement -- previously exports had
+   * no totals at all while some screens did.
+   *
+   * Omit for columns that shouldn't be summed (SKU, product name, dates).
+   * The footer row is only emitted when at least one column defines this.
+   */
+  total?: (rows: T[]) => string | number | null
+}
+
+/** True when any column contributes to a TOTAL row. */
+export function hasTotals<T>(columns: ExportColumn<T>[]): boolean {
+  return columns.some((c) => c.total)
+}
+
+/**
+ * Builds the TOTAL footer cells for `rows`. The first column is labelled
+ * "TOTAL" when it has no `total` of its own, so the row is readable
+ * instead of starting with a blank cell.
+ */
+export function buildTotalsRow<T>(
+  columns: ExportColumn<T>[],
+  rows: T[]
+): string[] {
+  return columns.map((column, index) => {
+    if (column.total) return String(column.total(rows) ?? "")
+    return index === 0 ? "TOTAL" : ""
+  })
+}
+
+/** Sums a numeric field across rows, tolerating null/undefined values. */
+export function sumBy<T>(rows: T[], pick: (row: T) => number | null | undefined): number {
+  return rows.reduce((acc, row) => acc + (pick(row) ?? 0), 0)
 }
 
 /**
@@ -83,6 +118,11 @@ export async function exportToExcel<T>(
     for (const row of rows) {
       sheet.addRow(columns.map((column) => column.accessor(row) ?? ""))
     }
+    if (hasTotals(columns)) {
+      const totalsRow = sheet.addRow(buildTotalsRow(columns, rows))
+      totalsRow.font = { bold: true }
+      totalsRow.border = { top: { style: "thin" } }
+    }
     const buffer = await workbook.xlsx.writeBuffer()
     await writeFile(path, toUint8Array(buffer))
     toast.success(`Exported ${rows.length} rows to ${path}`)
@@ -107,12 +147,31 @@ export async function exportToPdf<T>(
     doc.setFontSize(9)
     doc.setTextColor(120)
     doc.text(new Date().toLocaleString(), 14, 21)
+
+    // Totals go in the table's last row (not as free text underneath) so
+    // the figures stay aligned under their columns.
+    const body: (string | number)[][] = rows.map((row) =>
+      columns.map((column) => column.accessor(row) ?? "")
+    )
+    const showTotals = hasTotals(columns)
+    if (showTotals) body.push(buildTotalsRow(columns, rows))
+
     autoTable(doc, {
       startY: 26,
       head: [columns.map((column) => column.header)],
-      body: rows.map((row) => columns.map((column) => column.accessor(row) ?? "")),
+      body,
       styles: { fontSize: 8 },
       headStyles: { fillColor: [51, 65, 85] },
+      didParseCell: (data) => {
+        if (
+          showTotals &&
+          data.section === "body" &&
+          data.row.index === body.length - 1
+        ) {
+          data.cell.styles.fontStyle = "bold"
+          data.cell.styles.fillColor = [240, 239, 237]
+        }
+      },
     })
     const buffer = doc.output("arraybuffer")
     await writeFile(path, toUint8Array(buffer))
