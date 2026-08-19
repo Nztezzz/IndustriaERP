@@ -135,7 +135,7 @@ export function CustomerFormDialog({
                   <FormItem>
                     <FormLabel>Name</FormLabel>
                     <FormControl>
-                      <Input placeholder="Acme Packaging Co." {...field} />
+                      <Input {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -148,7 +148,7 @@ export function CustomerFormDialog({
                   <FormItem>
                     <FormLabel>Contact person</FormLabel>
                     <FormControl>
-                      <Input placeholder="Optional" {...field} />
+                      <Input {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -165,7 +165,6 @@ export function CustomerFormDialog({
                     <FormLabel>Phone</FormLabel>
                     <FormControl>
                       <Input
-                        placeholder="Optional"
                         type="tel"
                         inputMode="numeric"
                         {...field}
@@ -186,7 +185,7 @@ export function CustomerFormDialog({
                   <FormItem>
                     <FormLabel>Email</FormLabel>
                     <FormControl>
-                      <Input type="email" placeholder="Optional" {...field} />
+                      <Input type="email" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -201,7 +200,7 @@ export function CustomerFormDialog({
                 <FormItem>
                   <FormLabel>Address</FormLabel>
                   <FormControl>
-                    <Textarea placeholder="Optional" {...field} />
+                    <Textarea {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -216,7 +215,7 @@ export function CustomerFormDialog({
                   <FormItem>
                     <FormLabel>GST number</FormLabel>
                     <FormControl>
-                      <Input placeholder="Optional" {...field} />
+                      <Input {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

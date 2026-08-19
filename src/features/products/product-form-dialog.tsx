@@ -40,7 +40,7 @@ const productSchema = z.object({
   name: z.string().min(1, "Product name is required"),
   description: z.string().optional(),
   baseUnitId: z.string().min(1, "Base unit is required"),
-  reorderLevel: z.coerce.number().min(0, "Reorder level cannot be negative"),
+  reorderLevel: z.coerce.number().min(0, "Reorder level cannot be negative").default(0),
   isActive: z.boolean(),
   specifications: z.array(
     z.object({
@@ -179,7 +179,7 @@ export function ProductFormDialog({
                   <FormItem>
                     <FormLabel>SKU</FormLabel>
                     <FormControl>
-                      <Input placeholder="PPR-001" {...field} />
+                      <Input {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -218,7 +218,7 @@ export function ProductFormDialog({
                 <FormItem>
                   <FormLabel>Name</FormLabel>
                   <FormControl>
-                    <Input placeholder="Kraft Paper Reel 80GSM" {...field} />
+                    <Input {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -233,7 +233,6 @@ export function ProductFormDialog({
                   <FormLabel>Description</FormLabel>
                   <FormControl>
                     <Textarea
-                      placeholder="Optional notes about this product"
                       {...field}
                     />
                   </FormControl>
@@ -305,11 +304,9 @@ export function ProductFormDialog({
                   {specFields.fields.map((field, index) => (
                     <div key={field.id} className="flex items-center gap-2">
                       <Input
-                        placeholder="GSM"
                         {...form.register(`specifications.${index}.key`)}
                       />
                       <Input
-                        placeholder="80"
                         {...form.register(`specifications.${index}.value`)}
                       />
                       <Button

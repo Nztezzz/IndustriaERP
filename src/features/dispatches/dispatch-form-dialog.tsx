@@ -181,7 +181,7 @@ export function DispatchFormDialog({
                       <FormItem>
                         <FormLabel>Invoice number</FormLabel>
                         <FormControl>
-                          <Input placeholder="INV-1001" autoFocus {...field} />
+                          <Input autoFocus {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -263,7 +263,7 @@ export function DispatchFormDialog({
                       <FormItem>
                         <FormLabel>Vehicle number</FormLabel>
                         <FormControl>
-                          <Input placeholder="GJ07TU4875" {...field} />
+                          <Input {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -276,7 +276,7 @@ export function DispatchFormDialog({
                       <FormItem>
                         <FormLabel>Driver name</FormLabel>
                         <FormControl>
-                          <Input placeholder="Driver name" {...field} />
+                          <Input {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -290,7 +290,6 @@ export function DispatchFormDialog({
                         <FormLabel>Driver phone</FormLabel>
                         <FormControl>
                           <Input
-                            placeholder="Phone number"
                             type="tel"
                             inputMode="numeric"
                             {...field}
@@ -373,14 +372,12 @@ export function DispatchFormDialog({
                           type="number"
                           step="any"
                           min="0"
-                          placeholder="0"
                           {...form.register(`items.${index}.quantity`)}
                         />
                         <Input
                           type="number"
                           step="any"
                           min="0"
-                          placeholder="Optional"
                           {...form.register(`items.${index}.weightKg`)}
                         />
                         <Button
@@ -415,7 +412,7 @@ export function DispatchFormDialog({
                   <FormItem>
                     <FormLabel>Remarks</FormLabel>
                     <FormControl>
-                      <Textarea placeholder="Optional notes" {...field} />
+                      <Textarea {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

@@ -164,7 +164,6 @@ function StockAdjustmentForm() {
                     <FormLabel>Reason</FormLabel>
                     <FormControl>
                       <Textarea
-                        placeholder="e.g. physical stock count correction"
                         {...field}
                       />
                     </FormControl>

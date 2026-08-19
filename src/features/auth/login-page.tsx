@@ -99,7 +99,6 @@ export function LoginPage() {
                       <Input
                         autoComplete="username"
                         autoFocus
-                        placeholder="admin"
                         className="border-white/10 bg-white/5 text-white placeholder:text-white/30 focus-visible:ring-[#F5820D]"
                         {...field}
                       />
@@ -118,7 +117,6 @@ export function LoginPage() {
                       <Input
                         type="password"
                         autoComplete="current-password"
-                        placeholder="••••••••"
                         className="border-white/10 bg-white/5 text-white placeholder:text-white/30 focus-visible:ring-[#F5820D]"
                         {...field}
                       />

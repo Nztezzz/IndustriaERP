@@ -1,5 +1,6 @@
+import { useState } from "react"
 import { useNavigate, useParams } from "@tanstack/react-router"
-import { ArrowLeft, Package, User } from "lucide-react"
+import { ArrowLeft, Package, Undo2, User } from "lucide-react"
 import { PageHeader } from "@/components/layout/page-header"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -16,6 +17,8 @@ import {
 import { useDispatch } from "@/lib/api/hooks/use-dispatches"
 import { useProducts } from "@/lib/api/hooks/use-products"
 import { parseResponseDateTime } from "@/lib/api/datetime"
+import { RequireRole } from "@/components/layout/require-role"
+import { ReturnDialog } from "@/features/dispatches/return-dialog"
 import type { DispatchStatus } from "@/lib/constants"
 
 const STATUS_VARIANT: Record<DispatchStatus, "outline" | "secondary" | "destructive"> = {
@@ -31,6 +34,7 @@ export function DispatchDetailPage() {
   })
   const { data: dispatch, isLoading } = useDispatch(dispatchId)
   const { data: products } = useProducts(true)
+  const [returnOpen, setReturnOpen] = useState(false)
 
   return (
     <>
@@ -38,10 +42,20 @@ export function DispatchDetailPage() {
         title={isLoading ? "Loading..." : dispatch?.invoiceNumber ?? "Dispatch not found"}
         description="Dispatch details and line items."
         actions={
-          <Button variant="outline" size="sm" onClick={() => navigate({ to: "/dispatches" })}>
-            <ArrowLeft />
-            Back to dispatches
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => navigate({ to: "/dispatches" })}>
+              <ArrowLeft />
+              Back to dispatches
+            </Button>
+            <RequireRole minRole="operator" fallback={null}>
+              {dispatch && (
+                <Button size="sm" onClick={() => setReturnOpen(true)}>
+                  <Undo2 />
+                  Return
+                </Button>
+              )}
+            </RequireRole>
+          </div>
         }
       />
 
@@ -155,6 +169,15 @@ export function DispatchDetailPage() {
         </Card>
 
       </div>
+
+      {dispatch && (
+        <ReturnDialog
+          open={returnOpen}
+          onOpenChange={setReturnOpen}
+          dispatchId={dispatchId}
+          invoiceNumber={dispatch.invoiceNumber}
+        />
+      )}
     </>
   )
 }

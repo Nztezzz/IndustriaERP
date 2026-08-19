@@ -7,6 +7,7 @@ pub mod dispatch_service;
 pub mod product_service;
 pub mod reel_service;
 pub mod report_service;
+pub mod return_service;
 pub mod search_service;
 pub mod seed_service;
 pub mod stock_service;

@@ -266,7 +266,7 @@ function NewSlipTab() {
             </div>
             <div className="flex flex-col gap-1.5">
               <Label>Invoice No *</Label>
-              <Input value={invoiceNo} onChange={(e) => setInvoiceNo(e.target.value)} placeholder="PMI-2026/27-0362" />
+              <Input value={invoiceNo} onChange={(e) => setInvoiceNo(e.target.value)} />
             </div>
             <div className="flex flex-col gap-1.5">
               <Label>Date</Label>
@@ -274,11 +274,11 @@ function NewSlipTab() {
             </div>
             <div className="flex flex-col gap-1.5">
               <Label>Tempo No</Label>
-              <Input value={tempoNo} onChange={(e) => setTempoNo(e.target.value)} placeholder="GJ07TU4875" />
+              <Input value={tempoNo} onChange={(e) => setTempoNo(e.target.value)} />
             </div>
             <div className="flex flex-col gap-1.5">
               <Label>Total Parcel</Label>
-              <Input value={totalParcel} onChange={(e) => setTotalParcel(e.target.value)} placeholder="30+10" />
+              <Input value={totalParcel} onChange={(e) => setTotalParcel(e.target.value)} />
             </div>
           </div>
         </CardContent>
@@ -315,8 +315,8 @@ function NewSlipTab() {
                   </TableCell>
                   <TableCell><Input className="h-8 w-16" value={row.strand} onChange={(e) => updateRow(row.id, "strand", e.target.value)} /></TableCell>
                   <TableCell><Input className="h-8" value={row.meter} onChange={(e) => updateRow(row.id, "meter", e.target.value)} /></TableCell>
-                  <TableCell><Input className="h-8" type="number" step="0.001" value={row.grossWeight} onChange={(e) => updateRow(row.id, "grossWeight", e.target.value)} placeholder="0.000" /></TableCell>
-                  <TableCell><Input className="h-8" type="number" step="0.001" value={row.tareWeight} onChange={(e) => updateRow(row.id, "tareWeight", e.target.value)} placeholder="0.000" /></TableCell>
+                  <TableCell><Input className="h-8" type="number" step="0.001" value={row.grossWeight} onChange={(e) => updateRow(row.id, "grossWeight", e.target.value)} /></TableCell>
+                  <TableCell><Input className="h-8" type="number" step="0.001" value={row.tareWeight} onChange={(e) => updateRow(row.id, "tareWeight", e.target.value)} /></TableCell>
                   <TableCell className="tabular-nums font-medium text-right">{computeNet(row.grossWeight, row.tareWeight).toFixed(3)}</TableCell>
                   <TableCell><Button variant="ghost" size="sm" onClick={() => removeRow(row.id)} className="text-destructive"><Trash2 className="size-4" /></Button></TableCell>
                 </TableRow>

@@ -152,6 +152,41 @@ pub async fn record_inward(
     Ok(movement)
 }
 
+/// Same as `record_inward` but takes any `ConnectionTrait` (including a
+/// `DatabaseTransaction`) and an optional `dispatch_id` so
+/// `return_service` can compose it into a larger transaction and link the
+/// inward movement back to the original dispatch.
+pub async fn record_inward_in<C: ConnectionTrait>(
+    db: &C,
+    input: InwardInput,
+    performed_by: Uuid,
+    dispatch_id: Option<Uuid>,
+) -> AppResult<stock_movement::Model> {
+    if input.quantity <= 0.0 {
+        return Err(AppError::Validation(
+            "inward quantity must be greater than zero".into(),
+        ));
+    }
+
+    let movement = record_movement(
+        db,
+        NewMovement {
+            product_id: input.product_id,
+            movement_type: StockMovementType::Inward,
+            quantity: input.quantity,
+            adjustment_delta: None,
+            dispatch_id,
+            reference_number: input.reference_number,
+            remarks: input.remarks,
+            performed_by,
+        },
+    )
+    .await?;
+    apply_balance_delta(db, input.product_id, input.quantity).await?;
+
+    Ok(movement)
+}
+
 /// Records an outward movement. When called directly from the Inventory
 /// module (`dispatch_id: None`), the caller is responsible for opening its
 /// own transaction if it needs one; when called from `dispatch_service`

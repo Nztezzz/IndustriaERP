@@ -30,7 +30,7 @@ import { useRecordInward } from "@/lib/api/hooks/use-stock"
 const inwardSchema = z.object({
   productId: z.string().min(1, "Select a product type"),
   quantity: z.coerce.number().positive("Quantity must be greater than zero"),
-  customerId: z.string().min(1, "Select a customer / party"),
+  customerId: z.string().optional(),
   date: z.string().min(1, "Date is required"),
   referenceNumber: z.string().min(1, "Reference / Invoice number is required"),
   remarks: z.string().optional(),
@@ -59,7 +59,9 @@ function InwardEntryForm() {
   })
 
   async function onSubmit(values: InwardValues) {
-    const customerName = customers?.find((c) => c.id === values.customerId)?.name
+    const customerName = values.customerId
+      ? customers?.find((c) => c.id === values.customerId)?.name
+      : undefined
     const dateStr = values.date ? `[${values.date}]` : ""
     const partyStr = customerName ? `Party: ${customerName}` : ""
     const remarkParts = [partyStr, dateStr, values.remarks?.trim()].filter(Boolean)
@@ -116,7 +118,7 @@ function InwardEntryForm() {
                 name="customerId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Customer / Party Name</FormLabel>
+                    <FormLabel>Customer / Party Name (optional)</FormLabel>
                     <Select value={field.value} onValueChange={field.onChange}>
                       <FormControl>
                         <SelectTrigger className="w-full">
@@ -179,7 +181,6 @@ function InwardEntryForm() {
                     <FormLabel>Reference / Invoice number</FormLabel>
                     <FormControl>
                       <Input
-                        placeholder="e.g. supplier invoice / PO number"
                         {...field}
                       />
                     </FormControl>
@@ -195,7 +196,7 @@ function InwardEntryForm() {
                   <FormItem>
                     <FormLabel>Remarks</FormLabel>
                     <FormControl>
-                      <Textarea placeholder="Optional notes" {...field} />
+                      <Textarea {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
