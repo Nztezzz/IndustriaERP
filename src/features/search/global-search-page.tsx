@@ -190,6 +190,28 @@ function RecentEntriesSection() {
     return m.remarks?.includes(customer.name) ?? false
   })
 
+  /**
+   * Resolves the party/customer name from a stock movement. Tries:
+   * 1. "Party: Name" embedded in remarks (the standard format)
+   * 2. If a customer filter is active, use that customer's name
+   * 3. Falls back to "—" only if truly unknown
+   */
+  function resolvePartyName(m: StockMovementDto): string {
+    const match = m.remarks?.match(/Party:\s*([^|]+)/)
+    if (match) return match[1].trim()
+    // If filtering by customer, all rows belong to that customer
+    if (filterCustomer) {
+      const c = allCustomers?.find((c) => c.id === filterCustomer)
+      if (c) return c.name
+    }
+    // Try to find customer name anywhere in remarks
+    if (m.remarks && allCustomers) {
+      const found = allCustomers.find((c) => m.remarks!.includes(c.name))
+      if (found) return found.name
+    }
+    return "\u2014"
+  }
+
   // Old data = everything beyond the displayed entries
   const oldRows = allRows.slice(entryCount)
 
@@ -241,8 +263,7 @@ function RecentEntriesSection() {
 
     const bodyData = rows.map((m, i) => {
       // Extract party name from remarks
-      const partyMatch = m.remarks?.match(/Party:\s*([^|]+)/)
-      const party = partyMatch?.[1]?.trim() ?? "\u2014"
+      const party = resolvePartyName(m)
       // Extract date from remarks
       const dateMatch = m.remarks?.match(/\[(\d{4}-\d{2}-\d{2})\]/)
       const dateStr = dateMatch?.[1] ?? parseResponseDateTime(m.createdAt).toLocaleDateString()
