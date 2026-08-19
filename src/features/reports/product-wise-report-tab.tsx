@@ -22,7 +22,7 @@ import type { ProductMovementSummaryDto } from "@/lib/api/types"
  * figure keeps meaning "produced/received".
  */
 function netChange(r: ProductMovementSummaryDto): number {
-  return r.totalInward - r.totalOutward + r.totalReturn + r.totalAdjustmentDelta
+  return r.totalInward - r.totalOutward + (r.totalReturn ?? 0) + r.totalAdjustmentDelta
 }
 
 const COLUMNS: ExportColumn<ProductMovementSummaryDto>[] = [
@@ -120,7 +120,7 @@ export function ProductWiseReportTab({
                   <TableCell>{row.productName}</TableCell>
                   <TableCell className="text-right tabular-nums">{row.totalInward}</TableCell>
                   <TableCell className="text-right tabular-nums">{row.totalOutward}</TableCell>
-                  <TableCell className="text-right tabular-nums">{row.totalReturn}</TableCell>
+                  <TableCell className="text-right tabular-nums">{row.totalReturn ?? 0}</TableCell>
                   <TableCell className="text-right tabular-nums">
                     {row.totalAdjustmentDelta > 0 ? `+${row.totalAdjustmentDelta}` : row.totalAdjustmentDelta}
                   </TableCell>

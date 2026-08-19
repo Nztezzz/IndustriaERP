@@ -71,6 +71,13 @@ pub async fn product_wise_summary(
             continue;
         };
         match movement.movement_type.as_str() {
+            // An "inward" movement WITH a dispatch_id is a pre-migration
+            // return (back when returns were stored as inward). Count it
+            // under return so the inward figure stays at what was actually
+            // produced/received. New returns use movement_type = "return".
+            "inward" if movement.dispatch_id.is_some() => {
+                summary.total_return += movement.quantity;
+            }
             "inward" => summary.total_inward += movement.quantity,
             "outward" => summary.total_outward += movement.quantity,
             "return" => summary.total_return += movement.quantity,
@@ -188,6 +195,7 @@ pub async fn daily_activity(
             dispatch_count: 0,
         });
         match m.movement_type.as_str() {
+            "inward" if m.dispatch_id.is_some() => entry.return_count += 1,
             "inward" => entry.inward_count += 1,
             "outward" => entry.outward_count += 1,
             "return" => entry.return_count += 1,

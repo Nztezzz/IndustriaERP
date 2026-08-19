@@ -82,10 +82,9 @@ pub async fn get_returnable_items(
 /// Sums the quantity of all RETURN movements linked to a specific dispatch
 /// and product (i.e. everything already returned for that line item).
 ///
-/// Filters on `movement_type = "return"` specifically -- filtering on
-/// "inward" would be wrong now that returns have their own type, and would
-/// also wrongly pick up any unrelated inward that happened to carry this
-/// dispatch id.
+/// Counts BOTH the new `movement_type = "return"` records AND legacy
+/// `"inward"` records that carry a `dispatch_id` (created before the
+/// Return movement type existed).
 async fn get_returned_qty<C: ConnectionTrait>(
     db: &C,
     dispatch_id: Uuid,
@@ -94,7 +93,11 @@ async fn get_returned_qty<C: ConnectionTrait>(
     let movements = stock_movement::Entity::find()
         .filter(stock_movement::Column::DispatchId.eq(dispatch_id))
         .filter(stock_movement::Column::ProductId.eq(product_id))
-        .filter(stock_movement::Column::MovementType.eq(StockMovementType::Return.as_str()))
+        .filter(
+            sea_orm::Condition::any()
+                .add(stock_movement::Column::MovementType.eq(StockMovementType::Return.as_str()))
+                .add(stock_movement::Column::MovementType.eq("inward"))
+        )
         .all(db)
         .await?;
 
